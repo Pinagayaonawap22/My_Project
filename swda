@@ -25,7 +25,6 @@
             margin: 0;
             padding: 0;
         }
-
     </style>
 </head>
 <body>
@@ -36,8 +35,6 @@
     </div>
     <button id="toggleUnitButton">Switch to Fahrenheit</button>
     <canvas id="tempHumidityChart"></canvas>
-
-
 
     <script>
         let tempHumidityChart;
@@ -51,25 +48,17 @@
             return celsius + 273.15;
         }
 
-        function convertFromFahrenheit(value, unit) {
-            if (unit === 'C') return (value - 32) * 5/9;
-            if (unit === 'K') return (value - 32) * 5/9 + 273.15;
-            return value;
-        }
-
-        function convertFromKelvin(value, unit) {
-            if (unit === 'C') return value - 273.15;
-            if (unit === 'F') return (value - 273.15) * 9/5 + 32;
-            return value;
-        }
-
         function fetchDataAndUpdateChart() {
-            fetch('dht.data')
-                .then(response => response.json())
+            fetch('/dht_data')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
-
-                    // For Activity 1
-                    const [tempCelsius, humidity] = data.split(',').map(value => parseFloat(value.trim()));
+                    let tempCelsius = data.temperature;
+                    let humidity = data.humidity;
                     let temp;
 
                     switch (temperatureUnit) {
@@ -89,8 +78,8 @@
                     document.getElementById('humiditytext').textContent = `${humidity.toFixed(2)}`;
 
                     if (tempHumidityChart) {
-                        tempHumidityChart.data.datasets[0].data.push(temp_site);
-                        tempHumidityChart.data.datasets[1].data.push(humid_site);
+                        tempHumidityChart.data.datasets[0].data.push(temp);
+                        tempHumidityChart.data.datasets[1].data.push(humidity);
 
                         const maxDataPoints = 500;
                         if (tempHumidityChart.data.datasets[0].data.length > maxDataPoints) {
@@ -113,13 +102,13 @@
                                 datasets: [
                                     {
                                         label: `Temperature (${temperatureUnit})`,
-                                        data: [temp_site],
+                                        data: [temp],
                                         borderColor: 'red',
                                         fill: false
                                     },
                                     {
                                         label: 'Humidity (%)',
-                                        data: [humid_site],
+                                        data: [humidity],
                                         borderColor: 'blue',
                                         fill: false
                                     }
@@ -144,8 +133,10 @@
                             }
                         });
                     }
-            })
-              .catch(error => console.error('Error fetch the data', error));
+                })
+                .catch(error => {
+                    console.error('Error fetching the data:', error);
+                });
         }
 
         function toggleTemperatureUnit() {
@@ -163,11 +154,12 @@
                     document.getElementById('toggleUnitButton').textContent = 'Switch to Fahrenheit';
                     break;
             }
+            fetchDataAndUpdateChart(); // Update chart with new unit
         }
+
         fetchDataAndUpdateChart();
-        setInterval(fetchDataAndUpdateChart, 1000);
+        setInterval(fetchDataAndUpdateChart, 10000); // Update every 10 seconds
         document.getElementById('toggleUnitButton').addEventListener('click', toggleTemperatureUnit);
     </script>
-
 </body>
 </html>
