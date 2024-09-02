@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embedded System Act</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: antiquewhite;
+        }
+        .text.data {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            margin: 20px;
+        }
+        #tempHumidityChart {
+            width: 100%;
+            height: 400px;
+        }
+        p {
+            margin: 0;
+            padding: 0;
+        }
+
+    </style>
+</head>
+<body>
+    <h2 style="align-items: center; text-align: center; background-color: darkgrey; font-size: 100px; font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">Bet Coder</h2>
+    <div class="text.data">
+        <p>Temperature: <span id="temptext">--</span> <span id="tempUnit">C</span></p>
+        <p>Humidity: <span id="humiditytext">--</span> %</p>
+    </div>
+    <button id="toggleUnitButton">Switch to Fahrenheit</button>
+    <canvas id="tempHumidityChart"></canvas>
+
+
+
+    <script>
+        let tempHumidityChart;
+        let temperatureUnit = 'C';
+
+        function convertToFahrenheit(celsius) {
+            return (celsius * 9/5) + 32;
+        }
+
+        function convertToKelvin(celsius) {
+            return celsius + 273.15;
+        }
+
+        function convertFromFahrenheit(value, unit) {
+            if (unit === 'C') return (value - 32) * 5/9;
+            if (unit === 'K') return (value - 32) * 5/9 + 273.15;
+            return value;
+        }
+
+        function convertFromKelvin(value, unit) {
+            if (unit === 'C') return value - 273.15;
+            if (unit === 'F') return (value - 273.15) * 9/5 + 32;
+            return value;
+        }
+
+        function fetchDataAndUpdateChart() {
+            fetch('dht.data')
+                .then(response => response.json())
+                .then(data => {
+
+                    // For Activity 1
+                    const [tempCelsius, humidity] = data.split(',').map(value => parseFloat(value.trim()));
+                    let temp;
+
+                    switch (temperatureUnit) {
+                        case 'C':
+                            temp = tempCelsius;
+                            break;
+                        case 'F':
+                            temp = convertToFahrenheit(tempCelsius);
+                            break;
+                        case 'K':
+                            temp = convertToKelvin(tempCelsius);
+                            break;
+                    }
+
+                    document.getElementById('temptext').textContent = `${temp.toFixed(2)}`;
+                    document.getElementById('tempUnit').textContent = temperatureUnit;
+                    document.getElementById('humiditytext').textContent = `${humidity.toFixed(2)}`;
+
+                    if (tempHumidityChart) {
+                        tempHumidityChart.data.datasets[0].data.push(temp_site);
+                        tempHumidityChart.data.datasets[1].data.push(humid_site);
+
+                        const maxDataPoints = 500;
+                        if (tempHumidityChart.data.datasets[0].data.length > maxDataPoints) {
+                            tempHumidityChart.data.datasets[0].data.shift();
+                            tempHumidityChart.data.datasets[1].data.shift();
+                        }
+
+                        tempHumidityChart.data.labels.push('');
+                        if (tempHumidityChart.data.labels.length > maxDataPoints) {
+                            tempHumidityChart.data.labels.shift();
+                        }
+
+                        tempHumidityChart.update();
+                    } else {
+                        const ctx = document.getElementById('tempHumidityChart').getContext('2d');
+                        tempHumidityChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: [''],
+                                datasets: [
+                                    {
+                                        label: `Temperature (${temperatureUnit})`,
+                                        data: [temp_site],
+                                        borderColor: 'red',
+                                        fill: false
+                                    },
+                                    {
+                                        label: 'Humidity (%)',
+                                        data: [humid_site],
+                                        borderColor: 'blue',
+                                        fill: false
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                scales: {
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Time'
+                                        }
+                                    },
+                                    y: {
+                                        title: {
+                                            display: true,
+                                            text: 'Value'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+            })
+              .catch(error => console.error('Error fetch the data', error));
+        }
+
+        function toggleTemperatureUnit() {
+            switch (temperatureUnit) {
+                case 'C':
+                    temperatureUnit = 'F';
+                    document.getElementById('toggleUnitButton').textContent = 'Switch to Kelvin';
+                    break;
+                case 'F':
+                    temperatureUnit = 'K';
+                    document.getElementById('toggleUnitButton').textContent = 'Switch to Celsius';
+                    break;
+                case 'K':
+                    temperatureUnit = 'C';
+                    document.getElementById('toggleUnitButton').textContent = 'Switch to Fahrenheit';
+                    break;
+            }
+        }
+        fetchDataAndUpdateChart();
+        setInterval(fetchDataAndUpdateChart, 1000);
+        document.getElementById('toggleUnitButton').addEventListener('click', toggleTemperatureUnit);
+    </script>
+
+</body>
+</html>
