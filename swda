@@ -1,311 +1,105 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Embedded System Act</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: antiquewhite;
-        }
-        .dht11.data {
-            text-align: center;
-            font-family: Arial, sans-serif;
-            font-size: 24px;
-            margin: 20px;
-        }
-        #tempHumidityChart {
-            width: 100%;
-            height: 480px;
-            border: 1px solid;
-        }  
-        p {
-            margin: 0;
-            padding: 0;
-        }
-        h2 {
-            text-align: center;
-            background-color: darkgrey;
-            font-size: 100px;
-            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
-        }
-        .buttondht {
-            display: flex;
-            justify-content: center;
-            text-align: center;
-            font-size: 20px;
-            height: 100vh; 
-            padding: 30px;
-        }
-        .buttonstyle {
-            font-family: 'Courier New', Courier, monospace;
-            height: 5%;
-            width: 300px;
-            font-weight: bold;
-            background-color: cadetblue;
-            font-size: 20px;
-        }
-        .texthere {
-            font-size: 30px;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-        .datahere {
-            font-weight: bold;
-            font-size: 32px;
-        }
-        .tabOption {
-            background-color: aqua;
-            align-items: center;
-            display: grid;
-            align-content: space-around;
-            justify-content: center;
-            box-sizing: border-box;
-            width: 10%;
-            height: 760px;
-            border: 2px solid black;
-            gap: 10px;
-        }
-        .acttab.active {
-            display: block;
-            border: 2px solid;
-            width: 90%;
-            height: 750px;
-            padding: 3px;
-        }
-        .acttab {
-            display: none;
-            border: 2px solid;
-            width: 90%;
-            height: 750px;
-            padding: 3px;
-        }
-        .maintab {
-            display: flex;
-            justify-content: left;
-            gap: 2px;
-        }
-        .optionbutton {
-            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-            height: 30px;
-            width: auto;
-            font-size: 15px;
-            border-radius: 0%;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <h2>Bet Coder</h2>
+import time
+import adafruit_dht
+import board
+import RPi.GPIO as GPIO
+from flask import Flask, render_template, jsonify
+
+app = Flask(__name__)
+
+GPIO.setmode(GPIO.BCM)
+buzzer_pin = 21
+trig_pin = 16
+echo_pin = 20
+
+GPIO.setup(buzzer_pin,GPIO.OUT)
+GPIO.setup(trig_pin, GPIO.OUT)
+GPIO.setup(echo_pin, GPIO.IN)
+
+dht_device = adafruit_dht.DHT11(board.D4, use_pulseio=False)
+
+def buzzer_on():
+    GPIO.output(buzzer_pin,GPIO.HIGH)
     
-    <div class="maintab">
-        <div class="tabOption">
-            <p style="text-align: center; font-size: 20px;"> Main Content</p>
-            <button class="optionbutton" onclick="tabControl(1)">Activity 1</button>
-            <button class="optionbutton" onclick="tabControl(2)">Activity 2</button>
-            <!-- Other buttons -->
-        </div>
+def buzzer_off():
+    GPIO.output(buzzer_pin, GPIO.LOW)
+    
+def buzzer_sensor(duration):
+    GPIO.output(buzzer_pin, GPIO.HIGH)
+    time.sleep(duration)
+    GPIO.output(buzzer_pin, GPIO.LOW)
+
+def distanceSensor():
+    GPIO.output(trig_pin, GPIO.LOW)
+    time.sleep(2)
+    
+    GPIO.output(trig_pin,GPIO.HIGH)
+    time.sleep(0.00001)
+    GPIO.output(trig_pin, GPIO.LOW)
+    
+    while GPIO.input(echo_pin) == GPIO.LOW:
+        pulseObject = time.time()
+    while GPIO.input(echo_pin) == GPIO.HIGH:
+        pulseNone = time.time()
         
-        <div id="tabOpen1" class="acttab active" style="background-color: ghostwhite;">
-            <div class="dht11.data">
-                <h1>Activity 1: Temperature & Humidity sensor with Webserver</h1>
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div style="margin-left: 20px;">
-                        <p class="texthere">Temperature: <span id="temptext" class="datahere">--</span> <span id="tempUnit" class="datahere">C</span></p>
-                        <p class="texthere">Humidity: <span id="humiditytext" class="datahere">--</span> %</p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                        <p style="margin: 0;">Buzzer Status:</p>
-                        <img src="https://i.imghippo.com/files/6fNBA1725347941.png" alt="Buzzer Status" style="background-color: aquamarine; width: 110px; vertical-align: middle; margin-right: 20px;">
-                    </div>
-                </div>
-            </div>
+    pulse_Distance = pulseNone - pulseObject
+    
+    distanceSensor = pulse_Distance * 1750
+    distanceSensor =round(distanceSensor, 2)
+    
+    return distanceSensor
 
-            <canvas id="tempHumidityChart"></canvas>
-
-            <div class="buttondht">
-                <button id="toggleUnitButton" class="buttonstyle">Switch to Fahrenheit</button>
-            </div>
-        </div>
-
-        <div id="tabOpen2" class="acttab" style="background-color: white;">
-            <div class="dht11.data">
-                <h1>Activity 2: Distance Sensor with Webserver</h1>
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div style="margin-left: 20px;">
-                        <p class="texthere">Distance: <span id="DistanceText" class="datahere">--</span> Cm</p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                        <p style="margin: 0;">Buzzer Status:</p>
-                        <img src="https://i.imghippo.com/files/6fNBA1725347941.png" alt="Buzzer Status" style="background-color: aquamarine; width: 110px; vertical-align: middle; margin-right: 20px;">
-                    </div>
-                </div>
-            </div>
-
-            <canvas id="distanceChart"></canvas>
-
-            <div class="buttondht">
-                <button id="toggleUnitButton2" class="buttonstyle">Switch to Fahrenheit</button>
-            </div>
-        </div>
-
-        <!-- Other tabs -->
-    </div>
-
-    <script>
-        function tabControl(chooseDiv) {
-            for (let i = 1; i <= 11; i++) {
-                document.getElementById('tabOpen' + i).classList.remove('active');
-            }
-            document.getElementById('tabOpen' + chooseDiv).classList.add('active');
+def sensor_data():
+    try:
+        temperature_c = dht_device.temperature
+        humidity = dht_device.humidity
+        html_dist = distanceSensor()
+        
+        data = {
+            'temperature': temperature_c,
+            'humidity': humidity,
+            'HTML_distance': html_dist
         }
 
-        let tempHumidityChart;
-        let distanceChart;
-        let temperatureUnit = 'C';
+        print(f"Sensor data: {data}")
 
-        function convertToFahrenheit(celsius) {
-            return (celsius * 9/5) + 32;
+        if temperature_c >= 38:
+            buzzer_sensor(4)
+        else:
+            buzzer_off()
+
+        if temperature_c is None or humidity is None:
+            raise RuntimeError("Failed to retrieve data from sensor.")
+
+        return data
+
+    except RuntimeError as error:
+        print(f"Error: {error.args[0]}")
+        return {
+            'temperature': 'N/A',
+            'humidity': 'N/A',
+            'HTML_distance': 'N/A'
         }
 
-        function convertToKelvin(celsius) {
-            return celsius + 273.15;
-        }
+@app.route('/Raspi_data')
+def Raspi_data():
+    try:
+        data = sensor_data()
+        print(f"Data to be JSONified: {data}")  # Debugging line
+        return jsonify(data)
+    except Exception as e:
+        print(f"Exception in /Raspi_data route: {e}")
+        return jsonify({'error': 'Internal Server Error'}), 500
 
-        function fetchDataAndUpdateChart() {
-            fetch('/Raspi_data')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    let tempCelsius = data.temperature;
-                    let humidity = data.humidity;
-                    let distanceMeasure = data.HTML_distance;
 
-                    let temp;
+@app.route('/')
+def index():
+    try:
+        return render_template('index1.html')
+    except Exception as e:
+        print(f"Exception in / route: {e}")
+        return make_response("Internal Server Error", 500)
+    
+time.sleep(1)
 
-                    switch (temperatureUnit) {
-                        case 'C':
-                            temp = tempCelsius;
-                            break;
-                        case 'F':
-                            temp = convertToFahrenheit(tempCelsius);
-                            break;
-                        case 'K':
-                            temp = convertToKelvin(tempCelsius);
-                            break;
-                    }
-
-                    document.getElementById('temptext').textContent = `${temp.toFixed(2)}`;
-                    document.getElementById('tempUnit').textContent = temperatureUnit;
-                    document.getElementById('humiditytext').textContent = `${humidity.toFixed(2)}`;
-                    document.getElementById('DistanceText').textContent = `${distanceMeasure.toFixed(2)}`;
-
-                    if (tempHumidityChart) {
-                        tempHumidityChart.data.datasets[0].data.push(temp);
-                        tempHumidityChart.data.datasets[1].data.push(humidity);
-
-                        const maxDataPoints = 100;
-                        if (tempHumidityChart.data.datasets[0].data.length > maxDataPoints) {
-                            tempHumidityChart.data.datasets[0].data.shift();
-                            tempHumidityChart.data.datasets[1].data.shift();
-                        }
-
-                        tempHumidityChart.data.labels.push('');
-                        if (tempHumidityChart.data.labels.length > maxDataPoints) {
-                            tempHumidityChart.data.labels.shift();
-                        }
-
-                        tempHumidityChart.update();
-                    } else {
-                        const ctx = document.getElementById('tempHumidityChart').getContext('2d');
-                        tempHumidityChart = new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels: [''],
-                                datasets: [
-                                    {
-                                        label: `Temperature (${temperatureUnit})`,
-                                        data: [temp],
-                                        borderColor: 'red',
-                                        fill: false
-                                    },
-                                    {
-                                        label: 'Humidity (%)',
-                                        data: [humidity],
-                                        borderColor: 'blue',
-                                        fill: false
-                                    }
-                                ]
-                            },
-                            options: {
-                                scales: {
-                                    x: {
-                                        display: false
-                                    },
-                                    y: {
-                                        beginAtZero: true
-                                    }
-                                }
-                            }
-                        });
-                    }
-
-                    if (distanceChart) {
-                        distanceChart.data.datasets[0].data.push(distanceMeasure);
-
-                        const maxDataPoints = 100;
-                        if (distanceChart.data.datasets[0].data.length > maxDataPoints) {
-                            distanceChart.data.datasets[0].data.shift();
-                        }
-
-                        distanceChart.data.labels.push('');
-                        if (distanceChart.data.labels.length > maxDataPoints) {
-                            distanceChart.data.labels.shift();
-                        }
-
-                        distanceChart.update();
-                    } else {
-                        const ctx2 = document.getElementById('distanceChart').getContext('2d');
-                        distanceChart = new Chart(ctx2, {
-                            type: 'line',
-                            data: {
-                                labels: [''],
-                                datasets: [{
-                                    label: 'Distance (cm)',
-                                    data: [distanceMeasure],
-                                    borderColor: 'green',
-                                    fill: false
-                                }]
-                            },
-                            options: {
-                                scales: {
-                                    x: {
-                                        display: false
-                                    },
-                                    y: {
-                                        beginAtZero: true
-                                    }
-                                }
-                            }
-                        });
-                    }
-                })
-                .catch(error => console.error('Error fetching data:', error));
-        }
-
-        document.getElementById('toggleUnitButton').addEventListener('click', () => {
-            temperatureUnit = temperatureUnit === 'C' ? 'F' : 'C';
-            document.getElementById('toggleUnitButton').textContent = `Switch to ${temperatureUnit === 'C' ? 'Fahrenheit' : 'Celsius'}`;
-            fetchDataAndUpdateChart();
-        });
-
-        setInterval(fetchDataAndUpdateChart, 1000);
-    </script>
-</body>
-</html>
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5008, debug=True)
