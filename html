@@ -167,29 +167,7 @@
 
         </div>
 
-        <div id="tabOpen2"  class="acttab" style="background-color: blue;">
-
-            <div class="dht11.data">
-                <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> Activity 1: Temperature & Humidity sensor with Webserver</h1>
-            <div style="display: flex; align-items: center; justify-content:space-between">
-                <div style="margin-left: 20px;">
-                    <p class="texthere">Distance: <span id="DistanceText" class="datahere">--</span> Cm</p>
-                </div>
-                <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                    <p style="margin: 0;">Buzzer Status:</p>
-                    <img src="https://i.imghippo.com/files/6fNBA1725347941.png" alt="Buzzer Status" style="background-color: aquamarine; width: 110px; vertical-align: middle; margin-right: 20px;">
-                </div>
-            </div>
-
-        </div>
-
-        <canvas id="distancechart"></canvas>
-
-        <div class="buttondht">
-            <button id="toggleUnitButton" class="buttonstyle">Switch to Fahrenheit</button>
-        </div>
-
-        </div>
+        <div id="tabOpen2"  class="acttab" style="background-color: blue;"></div>
         <div id="tabOpen3"  class="acttab"></div>
         <div id="tabOpen4"  class="acttab"></div>
         <div id="tabOpen5"  class="acttab"></div>
@@ -218,7 +196,6 @@
             document.getElementById('tabOpen' + chooseDiv).classList.add('active');
         }
         let tempHumidityChart;
-        let distanceChart;
         let temperatureUnit = 'C';
 
         function convertToFahrenheit(celsius) {
@@ -240,7 +217,6 @@
                 .then(data => {
                     let tempCelsius = data.temperature;
                     let humidity = data.humidity;
-                    let Distance_measure = data.HTML_distance;
                     let temp;
 
                     switch (temperatureUnit) {
@@ -258,7 +234,6 @@
                     document.getElementById('temptext').textContent = `${temp.toFixed(2)}`;
                     document.getElementById('tempUnit').textContent = temperatureUnit;
                     document.getElementById('humiditytext').textContent = `${humidity.toFixed(2)}`;
-                    document.getElementById('DistanceText').textContent = `${Distance_measure.toFixed(2)}`;
 
                     if (tempHumidityChart) {
                         tempHumidityChart.data.datasets[0].data.push(temp);
@@ -317,54 +292,6 @@
                             }
                         });
                         ///////////////////////////////////
-                       if (distanceChart){
-                        distanceChart.data.datasets[0].data.push(HTML_distance);
-
-                        const maxpoint1 = 500
-                        if (distanceChart.data.datasets[0].data.labels > maxpoint1){
-                            distanceChart.data.datasets[0].data.shift();
-                        }
-                        distanceChart.data.label.push('')
-                        if(distanceChart.data.datasets[0].data.label.length > maxpoint1){
-                            distanceChart.data.datasets[0].data.label.shift();
-                        }
-                        distanceChart.update()
-                       } else{
-                        const dct = document.getElementById('distanceChart').getContext('2d');
-                        distanceChart = new Chart(dct,{
-                            type: 'line',
-                            data: {
-                                labels: [''],
-                                datasets: [
-                                    {
-                                        label: `Cm`,
-                                        data: [Distance_measure],
-                                        borderColor: 'Orange',
-                                        fill: false
-    
-                                    },
-                                ]
-                            },
-                            options: {
-                                responsive: true,
-                                scales: {
-                                    x: {
-                                        title: {
-                                            display: true,
-                                            text: 'Time'
-                                        }
-                                    },
-                                    y: {
-                                        title: {
-                                            display: true,
-                                            text: 'Value'
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                       }
-
                     }
                 })
                 .catch(error => {
