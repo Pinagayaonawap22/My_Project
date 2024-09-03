@@ -1,5 +1,349 @@
-                   //////////////////////////////////////
-                    if (distanceChart) {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embedded System Act</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: antiquewhite;
+        }
+        .dht11.data {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            margin: 20px;
+        }
+        #tempHumidityChart {
+            width: 100%;
+            height: 480px;
+            border: 1px solid;       
+        } 
+        #distanceChart {
+            width: 100%;
+            height: 480px;
+            border: 1px solid; 
+        } 
+        p {
+            margin: 0;
+            padding: 0;
+        }
+        h2{
+            align-items: center;
+            text-align: center;
+            background-color: darkgrey;
+            font-size: 100px;
+            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif
+        }
+        .buttondht{
+            display: flex;
+            justify-content: center;
+            text-align: center;
+            font-size: 20px;
+            height: 100vh; 
+            padding: 30px;
+        }
+        .buttonstyle{
+            font-family: 'Courier New', Courier, monospace;
+            height: 5%;
+            width: 300px;
+            font-weight: bold;
+            background-color: cadetblue;
+            font-size: 20px;
+        }
+        .texthere{
+            font-size: 30px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .datahere{
+            font-weight: bold;
+            font-size: 32px;
+        }
+        .tabOption{
+            background-color:aqua;
+            align-items: center;
+            display:grid;
+            align-content: space-around;
+            justify-content: center;
+            box-sizing:border-box;
+            width: 10%;
+            height: 760px;
+            border: 2px solid black;
+            gap:10px
+        }
+        .acttab.active{
+            display: block;
+            border: 2px solid;
+            width: 90%;
+            height: 750px;
+            padding: 3px;
+        }
+        .acttab{
+            display: none;
+            border: 2px solid;
+            width: 90%;
+            height: 750px;
+            padding: 3px;
+        }
+        .maintab{
+            display:flex;
+            justify-content: left;
+            gap: 2px;
+
+        }
+        .optionbutton{
+            font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            height: 30px;
+            width: auto;
+            font-size: 15px;
+            border-radius: 0%;
+            font-weight: bold;
+            
+        }
+    </style>
+</head>
+<body>
+    <h2>Bet Coder</h2>
+    
+    <div class="maintab">
+        <div class="tabOption">
+            <p style="text-align: center; font-size: 20px;"> Main Content</p>
+            <button class="optionbutton" onclick="tabControl(1)">
+                Acivity 1
+            </button >
+            <button class="optionbutton" onclick="tabControl(2)">
+                Acivity 2
+            </button>
+            <button class="optionbutton" onclick="tabControl(3)">
+                Acivity 3
+            </button>
+            <button class="optionbutton" onclick="tabControl(4)">
+                Acivity 4
+            </button>
+            <button class="optionbutton" onclick="tabControl(5)">
+                Acivity 5
+            </button>
+            <button class="optionbutton" onclick="tabControl(6)">
+                Acivity 6
+            </button>
+            <button class="optionbutton" onclick="tabControl(7)">
+                Acivity 7
+            </button>
+            <button class="optionbutton" onclick="tabControl(8)">
+                Acivity 8
+            </button>
+            <button class="optionbutton" onclick="tabControl(9)">
+                Acivity 9
+            </button>
+            <button class="optionbutton" onclick="tabControl(10)">
+                Acivity 10
+            </button>
+            <button class="optionbutton" onclick="tabControl(11)">
+                Members
+            </button>
+        </div>
+        
+        <div id="tabOpen1" class="acttab active" style="background-color:ghostwhite;">
+        
+            <div class="dht11.data">
+                    <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> Activity 1: Temperature & Humidity sensor with Webserver</h1>
+                <div style="display: flex; align-items: center; justify-content:space-between">
+                    <div style="margin-left: 20px;">
+                        <p class="texthere">Temperature: <span id="temptext" class="datahere">--</span> <span id="tempUnit" class="datahere">C</span></p>
+                        <p class="texthere">Humidity: <span id="humiditytext" class="datahere">--</span> %</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
+                        <p style="margin: 0;">Buzzer Status:</p>
+                        <img src="https://i.imghippo.com/files/6fNBA1725347941.png" alt="Buzzer Status" style="background-color: aquamarine; width: 110px; vertical-align: middle; margin-right: 20px;">
+                    </div>
+                </div>
+
+            </div>
+
+            <canvas id="tempHumidityChart"></canvas>
+
+            <div class="buttondht">
+                <button id="toggleUnitButton" class="buttonstyle">Switch to Fahrenheit</button>
+            </div>
+
+        </div>
+
+        <div id="tabOpen2"  class="acttab" style="background-color:white;">
+
+            <div id="tabOpen1" class="acttab active" style="background-color:ghostwhite;">
+        
+                <div class="dht11.data">
+                        <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> Activity 1: Temperature & Humidity sensor with Webserver</h1>
+                    <div style="display: flex; align-items: center; justify-content:space-between">
+                        <div style="margin-left: 20px;">
+                            <p class="texthere">Distance: <span id="distance1" class="datahere">--</span> %</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
+                            <p style="margin: 0;">Buzzer Status:</p>
+                            <img src="https://i.imghippo.com/files/6fNBA1725347941.png" alt="Buzzer Status" style="background-color: aquamarine; width: 110px; vertical-align: middle; margin-right: 20px;">
+                        </div>
+                    </div>
+    
+                </div>
+    
+                <canvas id="distanceChart"></canvas>
+    
+                <div class="buttondht">
+                    <button id="toggleUnitButton" class="buttonstyle">Switch to Fahrenheit</button>
+                </div>
+
+        </div>
+        <div id="tabOpen3"  class="acttab"></div>
+        <div id="tabOpen4"  class="acttab"></div>
+        <div id="tabOpen5"  class="acttab"></div>
+        <div id="tabOpen6"  class="acttab"></div>
+        <div id="tabOpen7"  class="acttab"></div>
+        <div id="tabOpen8"  class="acttab"></div>
+        <div id="tabOpen9"  class="acttab"></div>
+        <div id="tabOpen10"  class="acttab"></div>
+        <div id="tabOpen11"  class="acttab"></div>
+    </div>
+
+    <script>
+        function tabControl(chooseDiv){
+            document.getElementById('tabOpen1').classList.remove('active');
+            document.getElementById('tabOpen2').classList.remove('active');
+            document.getElementById('tabOpen3').classList.remove('active');
+            document.getElementById('tabOpen4').classList.remove('active');
+            document.getElementById('tabOpen5').classList.remove('active');
+            document.getElementById('tabOpen6').classList.remove('active');
+            document.getElementById('tabOpen7').classList.remove('active');
+            document.getElementById('tabOpen8').classList.remove('active');
+            document.getElementById('tabOpen9').classList.remove('active');
+            document.getElementById('tabOpen10').classList.remove('active');
+            document.getElementById('tabOpen11').classList.remove('active');
+
+            document.getElementById('tabOpen' + chooseDiv).classList.add('active');
+        }
+        let tempHumidityChart;
+        let distanceChart;
+        let temperatureUnit = 'C';
+
+        function convertToFahrenheit(celsius) {
+            return (celsius * 9/5) + 32;
+        }
+
+        function convertToKelvin(celsius) {
+            return celsius + 273.15;
+        }
+
+        function fetchDataAndUpdateChart() {
+            fetch('/Raspi_data')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    let tempCelsius = data.temperature;
+                    let humidity = data.humidity;
+                    let distance1 = data.Distance_measure;
+                    let temp;
+
+                    switch (temperatureUnit) {
+                        case 'C':
+                            temp = tempCelsius;
+                            break;
+                        case 'F':
+                            temp = convertToFahrenheit(tempCelsius);
+                            break;
+                        case 'K':
+                            temp = convertToKelvin(tempCelsius);
+                            break;
+                    }
+
+                    document.getElementById('temptext').textContent = `${temp.toFixed(2)}`;
+                    document.getElementById('tempUnit').textContent = temperatureUnit;
+                    document.getElementById('humiditytext').textContent = `${humidity.toFixed(2)}`;
+                    document.getElementById('distancetext').textContent = `${distance1.toFixed(2)}`;
+                    
+
+                    if (tempHumidityChart) {
+                        tempHumidityChart.data.datasets[0].data.push(temp);
+                        tempHumidityChart.data.datasets[1].data.push(humidity);
+
+                        const maxDataPoints = 500;
+                        if (tempHumidityChart.data.datasets[0].data.length > maxDataPoints) {
+                            tempHumidityChart.data.datasets[0].data.shift();
+                            tempHumidityChart.data.datasets[1].data.shift();
+                        }
+
+                        tempHumidityChart.data.labels.push('');
+                        if (tempHumidityChart.data.labels.length > maxDataPoints) {
+                            tempHumidityChart.data.labels.shift();
+                        }
+
+                        tempHumidityChart.update();
+                    } else {
+                        const ctx = document.getElementById('tempHumidityChart').getContext('2d');
+                        tempHumidityChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: [''],
+                                datasets: [
+                                    {
+                                        label: `Temperature (${temperatureUnit})`,
+                                        data: [temp],
+                                        borderColor: 'red',
+                                        fill: false
+    
+                                    },
+                                    {
+                                        label: 'Humidity (%)',
+                                        data: [humidity],
+                                        borderColor: 'blue',
+                                        fill: false
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                scales: {
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Time'
+                                        }
+                                    },
+                                    y: {
+                                        title: {
+                                            display: true,
+                                            text: 'Value'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    //////////////////////////////////////
+                    ///////////////////////////////////////
+                })
+                .catch(error => {
+                    console.error('Error fetching the data:', error);
+                });
+        }
+        function fetchDistance() {
+            fetch('/Raspi_data')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    let distance1 = data.Distance_measure;
+                    document.getElementById('distancetext').textContent = `${distance1.toFixed(2)}`;
+
+            if (distanceChart) {
                         distanceChart.data.datasets[0].data.push(distance1);
 
                         const maxDataPoints1 = 500;
@@ -12,7 +356,7 @@
                             distanceChart.data.labels.shift();
                         }
 
-                        tempHumidityChart.update();
+                        distanceChart.update();
                     } else {
                         const ctx1 = document.getElementById('distanceChart').getContext('2d');
                         distanceChart = new Chart(ctx1, {
@@ -48,4 +392,33 @@
                             }
                         });
                     }
-                    ///////////////////////////////////////
+              })
+                .catch(error => {
+                    console.error('Error fetching the data:', error);
+                });
+        }
+
+        function toggleTemperatureUnit() {
+            switch (temperatureUnit) {
+                case 'C':
+                    temperatureUnit = 'F';
+                    document.getElementById('toggleUnitButton').textContent = 'Switch to Kelvin';
+                    break;
+                case 'F':
+                    temperatureUnit = 'K';
+                    document.getElementById('toggleUnitButton').textContent = 'Switch to Celsius';
+                    break;
+                case 'K':
+                    temperatureUnit = 'C';
+                    document.getElementById('toggleUnitButton').textContent = 'Switch to Fahrenheit';
+                    break;
+            }
+            fetchDataAndUpdateChart();
+        }
+
+        fetchDataAndUpdateChart();
+        setInterval(fetchDataAndUpdateChart, 1000);
+        document.getElementById('toggleUnitButton').addEventListener('click', toggleTemperatureUnit);
+    </script>
+</body>
+</html>
