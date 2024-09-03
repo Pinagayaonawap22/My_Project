@@ -167,7 +167,7 @@
 
         </div>
 
-        <div id="tabOpen2"  class="acttab" style="background-color:white;">
+        <div id="tabOpen2"  class="acttab" style="background-color: blue;">
 
             <div class="dht11.data">
                 <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> Activity 1: Temperature & Humidity sensor with Webserver</h1>
@@ -183,7 +183,11 @@
 
         </div>
 
-        <canvas id="distanceChart"></canvas>
+        <canvas id="distancechart"></canvas>
+
+        <div class="buttondht">
+            <button id="toggleUnitButton" class="buttonstyle">Switch to Fahrenheit</button>
+        </div>
 
         </div>
         <div id="tabOpen3"  class="acttab"></div>
@@ -237,7 +241,6 @@
                     let tempCelsius = data.temperature;
                     let humidity = data.humidity;
                     let Distance_measure = data.HTML_distance;
-
                     let temp;
 
                     switch (temperatureUnit) {
@@ -261,7 +264,7 @@
                         tempHumidityChart.data.datasets[0].data.push(temp);
                         tempHumidityChart.data.datasets[1].data.push(humidity);
 
-                        const maxDataPoints = 1000;
+                        const maxDataPoints = 500;
                         if (tempHumidityChart.data.datasets[0].data.length > maxDataPoints) {
                             tempHumidityChart.data.datasets[0].data.shift();
                             tempHumidityChart.data.datasets[1].data.shift();
@@ -317,7 +320,7 @@
                        if (distanceChart){
                         distanceChart.data.datasets[0].data.push(HTML_distance);
 
-                        const maxpoint1 = 1000
+                        const maxpoint1 = 500
                         if (distanceChart.data.datasets[0].data.labels > maxpoint1){
                             distanceChart.data.datasets[0].data.shift();
                         }
@@ -327,7 +330,7 @@
                         }
                         distanceChart.update()
                        } else{
-                        const dct = document.getElementById('distanceChart').getContext('2D');
+                        const dct = document.getElementById('distanceChart').getContext('2d');
                         distanceChart = new Chart(dct,{
                             type: 'line',
                             data: {
