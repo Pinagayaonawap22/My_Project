@@ -1,173 +1,175 @@
-let tempHumidityChart;
-let distanceChart;
-let temperatureUnit = 'C'; // Default temperature unit
+<script>
+    let tempHumidityChart;
+    let distanceChart;
+    let temperatureUnit = 'C';
 
-// Functions for temperature conversion
-function convertToFahrenheit(celsius) {
-    return (celsius * 9/5) + 32;
-}
+    function convertToFahrenheit(celsius) {
+        return (celsius * 9/5) + 32;
+    }
 
-function convertToKelvin(celsius) {
-    return celsius + 273.15;
-}
+    function convertToKelvin(celsius) {
+        return celsius + 273.15;
+    }
 
-async function fetchDataAndUpdateCharts() {
-    try {
-        // Fetch data from server
-        const response = await fetch('/Raspi_data');
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
+    function fetchDataAndUpdateCharts() {
+        fetch('/dht_data')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                let tempCelsius = data.temperature;
+                let humidity = data.humidity;
+                let distance = data.distance;
+                let temp;
 
-        const time = new Date();
+                switch (temperatureUnit) {
+                    case 'C':
+                        temp = tempCelsius;
+                        break;
+                    case 'F':
+                        temp = convertToFahrenheit(tempCelsius);
+                        break;
+                    case 'K':
+                        temp = convertToKelvin(tempCelsius);
+                        break;
+                }
 
-        // Process temperature and humidity data
-        let tempCelsius = data.temperature;
-        let humidity = data.humidity;
-        let temp;
+                document.getElementById('temptext').textContent = `${temp.toFixed(2)}`;
+                document.getElementById('tempUnit').textContent = temperatureUnit;
+                document.getElementById('humiditytext').textContent = `${humidity.toFixed(2)}`;
+                document.getElementById('distance1').textContent = `${distance.toFixed(2)} cm`;
 
+                if (tempHumidityChart) {
+                    tempHumidityChart.data.datasets[0].data.push(temp);
+                    tempHumidityChart.data.datasets[1].data.push(humidity);
+
+                    const maxDataPoints = 500;
+                    if (tempHumidityChart.data.datasets[0].data.length > maxDataPoints) {
+                        tempHumidityChart.data.datasets[0].data.shift();
+                        tempHumidityChart.data.datasets[1].data.shift();
+                    }
+
+                    tempHumidityChart.data.labels.push('');
+                    if (tempHumidityChart.data.labels.length > maxDataPoints) {
+                        tempHumidityChart.data.labels.shift();
+                    }
+
+                    tempHumidityChart.update();
+                } else {
+                    const ctxTempHumidity = document.getElementById('tempHumidityChart').getContext('2d');
+                    tempHumidityChart = new Chart(ctxTempHumidity, {
+                        type: 'line',
+                        data: {
+                            labels: [''],
+                            datasets: [
+                                {
+                                    label: `Temperature (${temperatureUnit})`,
+                                    data: [temp],
+                                    borderColor: 'red',
+                                    fill: false
+                                },
+                                {
+                                    label: 'Humidity (%)',
+                                    data: [humidity],
+                                    borderColor: 'blue',
+                                    fill: false
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Value'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if (distanceChart) {
+                    distanceChart.data.datasets[0].data.push(distance);
+
+                    const maxDataPoints = 500;
+                    if (distanceChart.data.datasets[0].data.length > maxDataPoints) {
+                        distanceChart.data.datasets[0].data.shift();
+                    }
+
+                    distanceChart.data.labels.push('');
+                    if (distanceChart.data.labels.length > maxDataPoints) {
+                        distanceChart.data.labels.shift();
+                    }
+
+                    distanceChart.update();
+                } else {
+                    const ctxDistance = document.getElementById('distanceChart').getContext('2d');
+                    distanceChart = new Chart(ctxDistance, {
+                        type: 'line',
+                        data: {
+                            labels: [''],
+                            datasets: [{
+                                label: 'Distance (cm)',
+                                data: [distance],
+                                borderColor: 'green',
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Distance'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching the data:', error);
+            });
+    }
+
+    function toggleTemperatureUnit() {
         switch (temperatureUnit) {
             case 'C':
-                temp = tempCelsius;
+                temperatureUnit = 'F';
+                document.getElementById('toggleUnitButton').textContent = 'Switch to Kelvin';
                 break;
             case 'F':
-                temp = convertToFahrenheit(tempCelsius);
+                temperatureUnit = 'K';
+                document.getElementById('toggleUnitButton').textContent = 'Switch to Celsius';
                 break;
             case 'K':
-                temp = convertToKelvin(tempCelsius);
+                temperatureUnit = 'C';
+                document.getElementById('toggleUnitButton').textContent = 'Switch to Fahrenheit';
                 break;
         }
-
-        document.getElementById('temptext').textContent = `${temp.toFixed(2)}`;
-        document.getElementById('tempUnit').textContent = temperatureUnit;
-        document.getElementById('humiditytext').textContent = `${humidity.toFixed(2)}`;
-
-        // Update Temperature & Humidity Chart
-        if (tempHumidityChart) {
-            if (tempHumidityChart.data.labels.length > 500) {
-                tempHumidityChart.data.labels.shift();
-                tempHumidityChart.data.datasets[0].data.shift();
-                tempHumidityChart.data.datasets[1].data.shift();
-            }
-            tempHumidityChart.data.labels.push(time);
-            tempHumidityChart.data.datasets[0].data.push(temp);
-            tempHumidityChart.data.datasets[1].data.push(humidity);
-            tempHumidityChart.update();
-        } else {
-            const ctxTempHumid = document.getElementById('tempHumidityChart').getContext('2d');
-            tempHumidityChart = new Chart(ctxTempHumid, {
-                type: 'line',
-                data: {
-                    labels: [time],
-                    datasets: [
-                        {
-                            label: `Temperature (${temperatureUnit})`,
-                            data: [temp],
-                            borderColor: 'red',
-                            fill: false
-                        },
-                        {
-                            label: 'Humidity (%)',
-                            data: [humidity],
-                            borderColor: 'blue',
-                            fill: false
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'second'
-                            },
-                            title: {
-                                display: true,
-                                text: 'Time'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Value'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Update Distance Chart
-        if (distanceChart) {
-            if (distanceChart.data.labels.length > 500) {
-                distanceChart.data.labels.shift();
-                distanceChart.data.datasets[0].data.shift();
-            }
-            distanceChart.data.labels.push(time);
-            distanceChart.data.datasets[0].data.push(data.distance);
-            distanceChart.update();
-        } else {
-            const ctxDistance = document.getElementById('distanceChart').getContext('2d');
-            distanceChart = new Chart(ctxDistance, {
-                type: 'line',
-                data: {
-                    labels: [time],
-                    datasets: [{
-                        label: 'Distance (cm)',
-                        data: [data.distance],
-                        borderColor: 'green',
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'second'
-                            },
-                            title: {
-                                display: true,
-                                text: 'Time'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Distance (cm)'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-    } catch (error) {
-        console.error('Error fetching the data:', error);
+        fetchDataAndUpdateCharts(); // Update charts with new unit
     }
-}
 
-function toggleTemperatureUnit() {
-    switch (temperatureUnit) {
-        case 'C':
-            temperatureUnit = 'F';
-            document.getElementById('toggleUnitButton').textContent = 'Switch to Kelvin';
-            break;
-        case 'F':
-            temperatureUnit = 'K';
-            document.getElementById('toggleUnitButton').textContent = 'Switch to Celsius';
-            break;
-        case 'K':
-            temperatureUnit = 'C';
-            document.getElementById('toggleUnitButton').textContent = 'Switch to Fahrenheit';
-            break;
-    }
-    fetchDataAndUpdateCharts(); // Update charts with new unit
-}
-
-fetchDataAndUpdateCharts();
-setInterval(fetchDataAndUpdateCharts, 2000);
-document.getElementById('toggleUnitButton').addEventListener('click', toggleTemperatureUnit);
+    fetchDataAndUpdateCharts();
+    setInterval(fetchDataAndUpdateCharts, 2000);
+    document.getElementById('toggleUnitButton').addEventListener('click', toggleTemperatureUnit);
+</script>
