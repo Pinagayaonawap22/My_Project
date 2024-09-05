@@ -452,6 +452,8 @@
                     const maxDataPoints = 5000;
                     if (distanceChart.data.datasets[0].data.length > maxDataPoints) {
                         distanceChart.data.datasets[0].data.shift();
+                    }
+                    if (distanceChart.data.datasets[1].data.length > maxDataPoints) {                   
                         distanceChart.data.datasets[1].data.shift();
                     }
 
@@ -467,14 +469,15 @@
                         type: 'line',
                         data: {
                             labels: [''],
-                            datasets: [{
-                                label: 'First Seensor (cm)',
-                                data: [distance],
-                                borderColor: 'black',
-                                fill: false
-                            },
+                            datasets: [
                                 {
-                                    label: 'SEcond Sensor (%)',
+                                    label: 'First Seensor (cm)',
+                                    data: [distance],
+                                    borderColor: 'black',
+                                    fill: false
+                                },
+                                {
+                                    label: 'Second Sensor (%)',
                                     data: [distance2],
                                     borderColor: 'orange',
                                     fill: false
@@ -487,14 +490,14 @@
                                 x: {
                                     title: {
                                         display: true,
-                                        text: 'yellow'
+                                        text: 'Time'
                                     }
                                 },
                                 y: {
                                     reverse: true,
                                     title: {
                                         display: true,
-                                        text: 'Distance'
+                                        text: 'Distance (cm)'
                                     }
                                 }
                             }
