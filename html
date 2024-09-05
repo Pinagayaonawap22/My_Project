@@ -17,15 +17,15 @@
             font-size: 24px;
             margin: 20px;
         }
-
+        
         #tempHumidityChart {
             width: 100%;
-            height: 480px;
+            height: 450px;
             border: 1px solid;       
         } 
         #distanceChart {
             width: 100%;
-            height: 480px;
+            height: 450px;
             border: 1px solid; 
         } 
         p {
@@ -40,16 +40,25 @@
             font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif
         }
         .buttonstyle{
+            display: flex;
+            justify-content: center;
+            align-items: center;
             font-family: 'Courier New', Courier, monospace;
-            height: 5%;
+            height: 40px;
             width: 300px;
             font-weight: bold;
-            background-color: cadetblue;
+            background-color: black;
             font-size: 20px;
+            color: whitesmoke;
         }
         .texthere{
             font-size: 30px;
             font-family: Arial, Helvetica, sans-serif;
+        }
+        .ChartPart{
+            display: flex;
+            justify-content: center;
+            padding: 2px;
         }
         .datahere{
             font-weight: bold;
@@ -101,6 +110,30 @@
         #colorbuzzer1{
             width: 110px;
         }
+        .picmember{
+            display: flex;
+            border-radius: 30px;
+            align-items: center;
+            justify-content: center;
+            align-content:space-around;
+            flex-direction: column;
+            background-color: lightblue;
+            text-align: center;
+            gap: 0%;
+            width: 175px; 
+            height: 310px; 
+            flex: 0 3 auto;
+            font-weight: bold;
+            font-family:'Courier New', Courier, monospace;
+            }
+        .picstyle{
+            height: 180px;
+            width: 170px;
+            border-radius:
+            100px; object-fit: 
+            cover; object-position: center;
+            overflow: hidden; 
+        }
     </style>
 </head>
 <body>
@@ -144,7 +177,7 @@
             </button>
         </div>
         
-        <div id="tabOpen1" class="acttab active" style="background-color:ghostwhite;">
+        <div id="tabOpen1" class="acttab" style="background-color:ghostwhite;">
         
             <div class="alltab.data">
                     <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> Activity 1: Temperature & Humidity sensor with Webserver</h1>
@@ -165,7 +198,9 @@
             </div>
 
             <canvas id="tempHumidityChart"></canvas>
-            <button id="toggleUnitButton" class="buttondesign"></button>
+            <div class="ChartPart">
+                <button id="toggleUnitButton" class="buttonstyle"></button>
+            </div>
         </div>
 
         <div id="tabOpen2"  class="acttab" style="background-color:white;">
@@ -179,7 +214,7 @@
                         <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
                             <p style="margin: 0;">Buzzer Status:</p>
                             <div id="colorbuzzer1">
-                            <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="background-color: aquamarine; width: 110px; vertical-align: middle; margin-right: 20px;">
+                            <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
                             </div>
                         </div>
                     </div>
@@ -197,7 +232,75 @@
         <div id="tabOpen8"  class="acttab"></div>
         <div id="tabOpen9"  class="acttab"></div>
         <div id="tabOpen10"  class="acttab"></div>
-        <div id="tabOpen11"  class="acttab"></div>
+
+        <div id="tabOpen11"  class="acttab active">
+
+            <div class="alltab.data">
+                <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> MEMBERS:</h1>
+            </div>
+            <div style="flex-direction: column; display: grid; padding: 15px; justify-content: space-around; display: flex; color: lightslategray; width: 98%; height: 84%; background-color:darkgray">
+                <div style="display: flex; justify-content: space-around;">
+                    <div class="picmember">
+                       <img src="https://i.imghippo.com/files/w5Gha1725511581.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                       <p style="margin-bottom: 10px; color: black;">LEADER</p>
+                       <p style="font-size: 20px; color: black;">ABANZADO RJAY</p>
+                    </div>
+                    <div class="picmember" >
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/YizH91725511907.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">PROGRAMMER 1</p>
+                            <p style="font-size: 20px; color: black;">PINAGAYAO NAWAP</p>
+                         </div>
+                    </div>
+                    <div class="picmember" >
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/Ev7NN1725512029.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">PROGRAMMER 2</p>
+                            <p style="font-size: 20px; color: black;">PALANAS JOHNPAUL</p>
+                         </div>
+                    </div>
+                    <div class="picmember" >
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/y34HS1725512096.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">RESEARCHER</p>
+                            <p style="font-size: 20px; color: black;">GINEZ DRAKE</p>
+                         </div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-around; ">
+                    <div  class="picmember">
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/pafus1725512199.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">HARDWARE 1</p>
+                            <p style="font-size: 20px; color: black;">MERINO MARK ANDREW</p>
+                         </div>
+                    </div>
+                    <div  class="picmember" >
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/kRVJG1725512319.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">HARDWARE 2</p>
+                            <p style="font-size: 20px; color: black;">JAPON JONATHAN</p>
+                         </div>
+                    </div>
+                    <div  class="picmember">
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/WA8RR1725512449.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">DOCUMENTARY 1</p>
+                            <p style="font-size: 20px; color: black;">VILLARBA JAMAICA</p>
+                         </div>
+                    </div>
+                    <div  class="picmember">
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/FTeFd1725512511.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">DOCUMENTARY 2</p>
+                            <p style="font-size: 20px; color: black;">URSOLINO ALBRIE</p>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
     </div>
 
 <script>
@@ -242,11 +345,6 @@
                 switch (temperatureUnit) {
                     case 'C':
                         temp = tempCelsius;
-                        if(temp => 38){
-                            iconChanger.style.backgroundColor = 'red'
-                        }else{
-                            iconChanger.style.backgroundColor= 'ghostwhite'
-                        }
                         break;
                     case 'F':
                         temp = convertToFahrenheit(tempCelsius);
@@ -266,7 +364,7 @@
                         break;
                 }
                 
-                if(distance <= 5){
+                if(distance <= 6){
                         iconChanger1.style.backgroundColor = 'red'
                     }else{
                         iconChanger1.style.backgroundColor= 'ghostwhite'
@@ -349,10 +447,12 @@
 
                 if (distanceChart) {
                     distanceChart.data.datasets[0].data.push(distance);
+                    distanceChart.data.datasets[1].data.push(distance2);
 
                     const maxDataPoints = 5000;
                     if (distanceChart.data.datasets[0].data.length > maxDataPoints) {
                         distanceChart.data.datasets[0].data.shift();
+                        distanceChart.data.datasets[1].data.shift();
                     }
 
                     distanceChart.data.labels.push('');
@@ -368,11 +468,18 @@
                         data: {
                             labels: [''],
                             datasets: [{
-                                label: 'Distance (cm)',
+                                label: 'First Seensor (cm)',
                                 data: [distance],
-                                borderColor: 'green',
+                                borderColor: 'black',
                                 fill: false
-                            }]
+                            },
+                                {
+                                    label: 'SEcond Sensor (%)',
+                                    data: [distance2],
+                                    borderColor: 'orange',
+                                    fill: false
+                                }
+                            ]
                         },
                         options: {
                             responsive: true,
@@ -380,7 +487,7 @@
                                 x: {
                                     title: {
                                         display: true,
-                                        text: 'Time'
+                                        text: 'yellow'
                                     }
                                 },
                                 y: {
@@ -433,6 +540,11 @@
             case 'K':
                 temperatureUnit = 'C';
                 document.getElementById('toggleUnitButton').textContent = 'Switch to Fahrenheit';
+                if(temp => 38){
+                    iconChanger.style.backgroundColor = 'red'
+                }else{
+                    iconChanger.style.backgroundColor= 'ghostwhite'
+                }
                 if (tempHumidityChart) {
                     tempHumidityChart.data.labels = [];
                     tempHumidityChart.data.datasets.forEach(dataset => {
@@ -450,7 +562,7 @@
     }
 
     fetchDataAndUpdateCharts();
-    setInterval(fetchDataAndUpdateCharts, 500);
+    setInterval(fetchDataAndUpdateCharts, 900);
     document.getElementById('toggleUnitButton').addEventListener('click', toggleTemperatureUnit);
 </script>
 
