@@ -340,6 +340,7 @@
                 let tempCelsius = data.temperature;
                 let humidity = data.humidity;
                 let distance = data.distance;
+                let distance2 = data.distance2;
                 let temp;
 
                 switch (temperatureUnit) {
@@ -469,8 +470,7 @@
                         type: 'line',
                         data: {
                             labels: [''],
-                            datasets: [
-                                {
+                            datasets: [{
                                     label: 'First Seensor (cm)',
                                     data: [distance],
                                     borderColor: 'black',
