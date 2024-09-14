@@ -7,20 +7,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            width: 100%;
             height: 100%;
-            overflow: hidden;
+         
             margin: 0;
             padding: 0;
             background-color: #2D2C2E;
-            
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh; /* Full viewport height */
-            width: 100vw; /* Full viewport width */
-            box-sizing: border-box;
-            text-align: center;
+
         }
         .alltab.data {
             text-align: center;
@@ -146,176 +138,194 @@
             cover; object-position: center;
             overflow: hidden; 
         }
+        .wholebody{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        .wholebody1{
+            background-color: #ffffff;
+            color: #000000;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+        }
     </style>
 </head>
 <body>
-        <h2>Bet Coder</h2>
-        
-        <div class="maintab">
-            <div class="tabOption">
-                <p style="text-align: center; font-size: 20px;"> Main Content</p>
-                <button class="optionbutton" onclick="tabControl(1)">
-                    Acivity 1
-                </button >
-                <button class="optionbutton" onclick="tabControl(2)">
-                    Acivity 2
-                </button>
-                <button class="optionbutton" onclick="tabControl(3)">
-                    Acivity 3
-                </button>
-                <button class="optionbutton" onclick="tabControl(4)">
-                    Acivity 4
-                </button>
-                <button class="optionbutton" onclick="tabControl(5)">
-                    Acivity 5
-                </button>
-                <button class="optionbutton" onclick="tabControl(6)">
-                    Acivity 6
-                </button>
-                <button class="optionbutton" onclick="tabControl(7)">
-                    Acivity 7
-                </button>
-                <button class="optionbutton" onclick="tabControl(8)">
-                    Acivity 8
-                </button>
-                <button class="optionbutton" onclick="tabControl(9)">
-                    Acivity 9
-                </button>
-                <button class="optionbutton" onclick="tabControl(10)">
-                    Acivity 10
-                </button>
-                <button class="optionbutton" onclick="tabControl(11)">
-                    Members
-                </button>
-            </div>
-            
-            <div id="tabOpen1" class="acttab" style="background-color:FAF5E6;">
-            
-                <div class="alltab.data">
-                        <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> Activity 1: Temperature & Humidity sensor with Webserver</h1>
-                    <div style="display: flex; align-items: center; justify-content:space-between">
-                        <div style="margin-left: 20px;">
-                            <p class="texthere">Temperature: <span id="temptext" class="datahere">--</span> <span id="tempUnit" class="datahere">C</span></p>
-                            <p class="texthere">Humidity: <span id="humiditytext" class="datahere">--</span> %</p>
-                            <p class="texthere">Highest Temperature: <span id="highestTemp" class="datahere">--</span> <span id="tempUnit" class="datahere"></span></p>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                            <p style="margin: 0;">Buzzer Status:</p>
-                            <div id="colorbuzzer">
-                                <img src="https://i.imghippo.com/files/6fNBA1725347941.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
-                            </div>
-                        </div>
-                    </div>
-                    
-                </div>
-
-                <canvas id="tempHumidityChart"></canvas>
-                <div class="ChartPart">
-                    <button id="toggleUnitButton" class="buttonstyle">Switch to Farenheit</button>
-                </div>
-            </div>
-
-            <div id="tabOpen2"  class="acttab" style="background-color:white;">
-            
-                    <div class="alltab.data">
-                            <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> Activity 2: Distance Sensor with Webserver</h1>
-                        <div style="display: flex; align-items: center; justify-content:space-between">
-                            <div style="margin-left: 20px;">
-                                <p class="texthere">Sensor Left: <span id="distance1" class="datahere">--</span> </p>
-                                <p class="texthere">Sensor Right: <span id="distance21" class="datahere">--</span> </p>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                                <p style="margin: 0;">Buzzer Status:</p>
-                                <div id="colorbuzzer1">
-                                <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
-                                </div>
-                            </div>
-                        </div>
-        
-                    </div>
-        
-                    <canvas id="distanceChart"></canvas>
-
-            </div>
-            <div id="tabOpen3"  class="acttab"> NO CONTENT </div>
-            <div id="tabOpen4"  class="acttab">NO CONTENT</div>
-            <div id="tabOpen5"  class="acttab">NO CONTENT</div>
-            <div id="tabOpen6"  class="acttab">NO CONTENT</div>
-            <div id="tabOpen7"  class="acttab">NO CONTENT</div>
-            <div id="tabOpen8"  class="acttab">NO CONTENT</div>
-            <div id="tabOpen9"  class="acttab">NO CONTENT</div>
-            <div id="tabOpen10"  class="acttab">NO CONTENT</div>
-
-            <div id="tabOpen11"  class="acttab active">
-
-                <div class="alltab.data">
-                    <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> MEMBERS:</h1>
-                </div>
-                <div style="flex-direction: column; display: grid; padding: 15px; justify-content: space-around; display: flex; color: lightslategray; width: 98%; height: 84%; background-color:darkgray">
-                    <div style="display: flex; justify-content: space-around;">
-                        <div class="picmember">
-                           <img src="https://i.imghippo.com/files/w5Gha1725511581.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
-                           <p style="margin-bottom: 10px; color: black;">LEADER</p>
-                           <p style="font-size: 20px; color: black;">ABANZADO RJAY</p>
-                        </div>
-                        <div class="picmember" >
-                            <div class="picmember">
-                                <img src="https://i.imghippo.com/files/YizH91725511907.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
-                                <p style="margin-bottom: 10px; color: black;">PROGRAMMER 1</p>
-                                <p style="font-size: 20px; color: black;">PINAGAYAO NAWAP</p>
-                             </div>
-                        </div>
-                        <div class="picmember" >
-                            <div class="picmember">
-                                <img src="https://i.imghippo.com/files/Ev7NN1725512029.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
-                                <p style="margin-bottom: 10px; color: black;">PROGRAMMER 2</p>
-                                <p style="font-size: 20px; color: black;">PALANAS JOHNPAUL</p>
-                             </div>
-                        </div>
-                        <div class="picmember" >
-                            <div class="picmember">
-                                <img src="https://i.imghippo.com/files/y34HS1725512096.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
-                                <p style="margin-bottom: 10px; color: black;">RESEARCHER</p>
-                                <p style="font-size: 20px; color: black;">GINEZ DRAKE</p>
-                             </div>
-                        </div>
-                    </div>
-                    <div style="display: flex; justify-content: space-around; ">
-                        <div  class="picmember">
-                            <div class="picmember">
-                                <img src="https://i.imghippo.com/files/pafus1725512199.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
-                                <p style="margin-bottom: 10px; color: black;">HARDWARE 1</p>
-                                <p style="font-size: 20px; color: black;">MERINO MARK ANDREW</p>
-                             </div>
-                        </div>
-                        <div  class="picmember" >
-                            <div class="picmember">
-                                <img src="https://i.imghippo.com/files/kRVJG1725512319.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
-                                <p style="margin-bottom: 10px; color: black;">HARDWARE 2</p>
-                                <p style="font-size: 20px; color: black;">JAPON JONATHAN</p>
-                             </div>
-                        </div>
-                        <div  class="picmember">
-                            <div class="picmember">
-                                <img src="https://i.imghippo.com/files/WA8RR1725512449.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
-                                <p style="margin-bottom: 10px; color: black;">DOCUMENTARY 1</p>
-                                <p style="font-size: 20px; color: black;">VILLARBA JAMAICA</p>
-                             </div>
-                        </div>
-                        <div  class="picmember">
-                            <div class="picmember">
-                                <img src="https://i.imghippo.com/files/FTeFd1725512511.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
-                                <p style="margin-bottom: 10px; color: black;">DOCUMENTARY 2</p>
-                                <p style="font-size: 20px; color: black;">URSOLINO ALBRIE</p>
-                             </div>
-                        </div>
-                    </div>
-                </div>
-
-
-            </div>
-        </div>
-
+  <div class="wholebody">
+    <div class="wholebody1">
+          <h2>Bet Coder</h2>
+          
+          <div class="maintab">
+              <div class="tabOption">
+                  <p style="text-align: center; font-size: 20px;"> Main Content</p>
+                  <button class="optionbutton" onclick="tabControl(1)">
+                      Acivity 1
+                  </button >
+                  <button class="optionbutton" onclick="tabControl(2)">
+                      Acivity 2
+                  </button>
+                  <button class="optionbutton" onclick="tabControl(3)">
+                      Acivity 3
+                  </button>
+                  <button class="optionbutton" onclick="tabControl(4)">
+                      Acivity 4
+                  </button>
+                  <button class="optionbutton" onclick="tabControl(5)">
+                      Acivity 5
+                  </button>
+                  <button class="optionbutton" onclick="tabControl(6)">
+                      Acivity 6
+                  </button>
+                  <button class="optionbutton" onclick="tabControl(7)">
+                      Acivity 7
+                  </button>
+                  <button class="optionbutton" onclick="tabControl(8)">
+                      Acivity 8
+                  </button>
+                  <button class="optionbutton" onclick="tabControl(9)">
+                      Acivity 9
+                  </button>
+                  <button class="optionbutton" onclick="tabControl(10)">
+                      Acivity 10
+                  </button>
+                  <button class="optionbutton" onclick="tabControl(11)">
+                      Members
+                  </button>
+              </div>
+              
+              <div id="tabOpen1" class="acttab" style="background-color:FAF5E6;">
+              
+                  <div class="alltab.data">
+                          <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> Activity 1: Temperature & Humidity sensor with Webserver</h1>
+                      <div style="display: flex; align-items: center; justify-content:space-between">
+                          <div style="margin-left: 20px;">
+                              <p class="texthere">Temperature: <span id="temptext" class="datahere">--</span> <span id="tempUnit" class="datahere">C</span></p>
+                              <p class="texthere">Humidity: <span id="humiditytext" class="datahere">--</span> %</p>
+                              <p class="texthere">Highest Temperature: <span id="highestTemp" class="datahere">--</span> <span id="tempUnit" class="datahere"></span></p>
+                          </div>
+                          <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
+                              <p style="margin: 0;">Buzzer Status:</p>
+                              <div id="colorbuzzer">
+                                  <img src="https://i.imghippo.com/files/6fNBA1725347941.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
+                              </div>
+                          </div>
+                      </div>
+                      
+                  </div>
+  
+                  <canvas id="tempHumidityChart"></canvas>
+                  <div class="ChartPart">
+                      <button id="toggleUnitButton" class="buttonstyle">Switch to Farenheit</button>
+                  </div>
+              </div>
+  
+              <div id="tabOpen2"  class="acttab" style="background-color:white;">
+              
+                      <div class="alltab.data">
+                              <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> Activity 2: Distance Sensor with Webserver</h1>
+                          <div style="display: flex; align-items: center; justify-content:space-between">
+                              <div style="margin-left: 20px;">
+                                  <p class="texthere">Sensor Left: <span id="distance1" class="datahere">--</span> </p>
+                                  <p class="texthere">Sensor Right: <span id="distance21" class="datahere">--</span> </p>
+                              </div>
+                              <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
+                                  <p style="margin: 0;">Buzzer Status:</p>
+                                  <div id="colorbuzzer1">
+                                  <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
+                                  </div>
+                              </div>
+                          </div>
+          
+                      </div>
+          
+                      <canvas id="distanceChart"></canvas>
+  
+              </div>
+              <div id="tabOpen3"  class="acttab"> NO CONTENT </div>
+              <div id="tabOpen4"  class="acttab">NO CONTENT</div>
+              <div id="tabOpen5"  class="acttab">NO CONTENT</div>
+              <div id="tabOpen6"  class="acttab">NO CONTENT</div>
+              <div id="tabOpen7"  class="acttab">NO CONTENT</div>
+              <div id="tabOpen8"  class="acttab">NO CONTENT</div>
+              <div id="tabOpen9"  class="acttab">NO CONTENT</div>
+              <div id="tabOpen10"  class="acttab">NO CONTENT</div>
+  
+              <div id="tabOpen11"  class="acttab active">
+  
+                  <div class="alltab.data">
+                      <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> MEMBERS:</h1>
+                  </div>
+                  <div style="flex-direction: column; display: grid; padding: 15px; justify-content: space-around; display: flex; color: lightslategray; width: 98%; height: 84%; background-color:darkgray">
+                      <div style="display: flex; justify-content: space-around;">
+                          <div class="picmember">
+                             <img src="https://i.imghippo.com/files/w5Gha1725511581.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                             <p style="margin-bottom: 10px; color: black;">LEADER</p>
+                             <p style="font-size: 20px; color: black;">ABANZADO RJAY</p>
+                          </div>
+                          <div class="picmember" >
+                              <div class="picmember">
+                                  <img src="https://i.imghippo.com/files/YizH91725511907.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                                  <p style="margin-bottom: 10px; color: black;">PROGRAMMER 1</p>
+                                  <p style="font-size: 20px; color: black;">PINAGAYAO NAWAP</p>
+                               </div>
+                          </div>
+                          <div class="picmember" >
+                              <div class="picmember">
+                                  <img src="https://i.imghippo.com/files/Ev7NN1725512029.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                                  <p style="margin-bottom: 10px; color: black;">PROGRAMMER 2</p>
+                                  <p style="font-size: 20px; color: black;">PALANAS JOHNPAUL</p>
+                               </div>
+                          </div>
+                          <div class="picmember" >
+                              <div class="picmember">
+                                  <img src="https://i.imghippo.com/files/y34HS1725512096.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                                  <p style="margin-bottom: 10px; color: black;">RESEARCHER</p>
+                                  <p style="font-size: 20px; color: black;">GINEZ DRAKE</p>
+                               </div>
+                          </div>
+                      </div>
+                      <div style="display: flex; justify-content: space-around; ">
+                          <div  class="picmember">
+                              <div class="picmember">
+                                  <img src="https://i.imghippo.com/files/pafus1725512199.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                                  <p style="margin-bottom: 10px; color: black;">HARDWARE 1</p>
+                                  <p style="font-size: 20px; color: black;">MERINO MARK ANDREW</p>
+                               </div>
+                          </div>
+                          <div  class="picmember" >
+                              <div class="picmember">
+                                  <img src="https://i.imghippo.com/files/kRVJG1725512319.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                                  <p style="margin-bottom: 10px; color: black;">HARDWARE 2</p>
+                                  <p style="font-size: 20px; color: black;">JAPON JONATHAN</p>
+                               </div>
+                          </div>
+                          <div  class="picmember">
+                              <div class="picmember">
+                                  <img src="https://i.imghippo.com/files/WA8RR1725512449.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                                  <p style="margin-bottom: 10px; color: black;">DOCUMENTARY 1</p>
+                                  <p style="font-size: 20px; color: black;">VILLARBA JAMAICA</p>
+                               </div>
+                          </div>
+                          <div  class="picmember">
+                              <div class="picmember">
+                                  <img src="https://i.imghippo.com/files/FTeFd1725512511.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                                  <p style="margin-bottom: 10px; color: black;">DOCUMENTARY 2</p>
+                                  <p style="font-size: 20px; color: black;">URSOLINO ALBRIE</p>
+                               </div>
+                          </div>
+                      </div>
+                  </div>
+  
+  
+              </div>
+          </div>
+  </div>
 <script>
     function tabControl(chooseDiv) {
         for (let i = 1; i <= 11; i++) {
