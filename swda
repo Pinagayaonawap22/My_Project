@@ -8,10 +8,10 @@
     <style>
         body {
             height: 100%;
-         
             margin: 0;
             padding: 0;
             background-color: #2D2C2E;
+            box-sizing: border-box;
 
         }
         .alltab.data {
