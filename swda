@@ -162,7 +162,7 @@
                         </div>
                     </div>
                 </div>
-                <canvas id="distanceChart"></canvas>
+                <canvas id="MotionChart"></canvas>
             </div>
         </div>
         
@@ -225,7 +225,8 @@
                 let humidity = data.humidity;
                 let distance = data.distance;
                 let distance2 = data.distance2;
-                let Pirmotion = data.Motion;
+                const Pirmotion = data.Motion ? 1:0;
+                const MotionText = data.Motion ? "Motion Detected!" : "No Motion";
                 let temp;
                 
                 if (tempCelsius === null || typeof tempCelsius === 'undefined') {
@@ -295,7 +296,7 @@
                 document.getElementById('humiditytext').textContent = isNaN(humidity) ? 'N/A' : `${humidity.toFixed(2)}`;
                 document.getElementById('distance1').textContent = isNaN(distance) ? 'N/A' : `${distance.toFixed(2)} cm`;
                 document.getElementById('distance21').textContent = isNaN(distance2) ? 'N/A' : `${distance2.toFixed(2)} cm`;
-                document.getElementById('PirText').textContent = Pirmotion;
+                document.getElementById('PirText').textContent = `Current Status: ${MotionText}`;
 
                 
                 if (tempHumidityChart) {
@@ -440,7 +441,7 @@
                             labels: [''],
                             datasets: [{
                                     label: 'Motion Detection',
-                                    data: [distance],
+                                    data: [Pirmotion],
                                     borderColor: 'green',
                                     fill: false
                                 }],
