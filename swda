@@ -157,7 +157,7 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
                         <p style="margin: 0;">Buzzer Status:</p>
-                        <div id="colorbuzzer2">
+                        <div id="colorbuzzer1">
                             <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
                         </div>
                     </div>
@@ -165,8 +165,10 @@
                 <canvas id="MotionChart"></canvas>
             </div>
         </div>
+        
     </div> 
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.getElementById("toggleButton").addEventListener("click", function() {
             const leftDiv = document.getElementById("leftDiv");
@@ -191,189 +193,96 @@
         let tempHumidityChart;
         let distanceChart;
         let MotionChart;
-
-        let temperatureUnit = 'C';
-        let highestTemperature = -Infinity; 
-        const highestTempDisplay = document.getElementById('highestTemp');
-        const intervalMinutes = 1;
-        let intervalStartTime = Date.now();
-        const iconChanger = document.getElementById('colorbuzzer');
-        const iconChanger1 = document.getElementById('colorbuzzer1');
-        const iconChanger2 = document.getElementById('colorbuzzer2');
-
-        const temperatureUnitButton = document.getElementById('toggleUnitButton');
-        temperatureUnitButton.addEventListener('click', function() {
-            temperatureUnit = (temperatureUnit === 'C') ? 'F' : 'C';
-            temperatureUnitButton.innerText = (temperatureUnit === 'C') ? 'Switch to Fahrenheit' : 'Switch to Celsius';
-            updateCharts();
-        });
-
-        function updateCharts() {
-            // Update temperature and humidity chart
-            fetch('/temperature_humidity_data')
-                .then(response => response.json())
-                .then(data => {
-                    const ctxTempHumidity = document.getElementById('tempHumidityChart').getContext('2d');
-                    if (tempHumidityChart) {
-                        tempHumidityChart.destroy();
-                    }
-                    tempHumidityChart = new Chart(ctxTempHumidity, {
-                        type: 'line',
-                        data: {
-                            labels: data.timestamps,
-                            datasets: [
-                                {
-                                    label: 'Temperature (' + temperatureUnit + ')',
-                                    data: data.temperature.map(temp => temperatureUnit === 'C' ? temp : temp * 9/5 + 32),
-                                    borderColor: 'red',
-                                    borderWidth: 1,
-                                    fill: false
-                                },
-                                {
-                                    label: 'Humidity (%)',
-                                    data: data.humidity,
-                                    borderColor: 'blue',
-                                    borderWidth: 1,
-                                    fill: false
-                                }
-                            ]
-                        },
-                        options: {
-                            scales: {
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
-                                    }
-                                },
-                                y: {
-                                    title: {
-                                        display: true,
-                                        text: 'Values'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                    // Update highest temperature
-                    highestTemperature = Math.max(...data.temperature.map(temp => temperatureUnit === 'C' ? temp : temp * 9/5 + 32));
-                    highestTempDisplay.textContent = highestTemperature.toFixed(2);
-                });
-
-            // Update distance chart
-            fetch('/distance_data')
-                .then(response => response.json())
-                .then(data => {
-                    const ctxDistance = document.getElementById('distanceChart').getContext('2d');
-                    if (distanceChart) {
-                        distanceChart.destroy();
-                    }
-                    distanceChart = new Chart(ctxDistance, {
-                        type: 'line',
-                        data: {
-                            labels: data.timestamps,
-                            datasets: [
-                                {
-                                    label: 'Distance Sensor 1 (cm)',
-                                    data: data.distance1,
-                                    borderColor: 'green',
-                                    borderWidth: 1,
-                                    fill: false
-                                },
-                                {
-                                    label: 'Distance Sensor 2 (cm)',
-                                    data: data.distance2,
-                                    borderColor: 'purple',
-                                    borderWidth: 1,
-                                    fill: false
-                                }
-                            ]
-                        },
-                        options: {
-                            scales: {
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
-                                    }
-                                },
-                                y: {
-                                    title: {
-                                        display: true,
-                                        text: 'Distance (cm)'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                });
-
-            // Update motion chart
-            fetch('/motion_data')
-                .then(response => response.json())
-                .then(data => {
-                    const ctxMotion = document.getElementById('MotionChart').getContext('2d');
-                    if (MotionChart) {
-                        MotionChart.destroy();
-                    }
-                    MotionChart = new Chart(ctxMotion, {
-                        type: 'line',
-                        data: {
-                            labels: data.timestamps,
-                            datasets: [
-                                {
-                                    label: 'Motion Detection',
-                                    data: data.motion,
-                                    borderColor: 'orange',
-                                    borderWidth: 1,
-                                    fill: false
-                                }
-                            ]
-                        },
-                        options: {
-                            scales: {
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
-                                    }
-                                },
-                                y: {
-                                    title: {
-                                        display: true,
-                                        text: 'Detection'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                });
+        let tempHumidityData = { labels: [], datasets: [] };
+        let distanceData = { labels: [], datasets: [] };
+        let MotionData = { labels: [], datasets: [] };
+    
+        function initializeCharts() {
+            const ctxTempHumidity = document.getElementById('tempHumidityChart').getContext('2d');
+            const ctxDistance = document.getElementById('distanceChart').getContext('2d');
+            const ctxMotion = document.getElementById('MotionChart').getContext('2d');
+    
+            tempHumidityChart = new Chart(ctxTempHumidity, {
+                type: 'line',
+                data: tempHumidityData,
+                options: { responsive: true, scales: { x: { type: 'linear', position: 'bottom' } } }
+            });
+    
+            distanceChart = new Chart(ctxDistance, {
+                type: 'line',
+                data: distanceData,
+                options: { responsive: true, scales: { x: { type: 'linear', position: 'bottom' } } }
+            });
+    
+            MotionChart = new Chart(ctxMotion, {
+                type: 'line',
+                data: MotionData,
+                options: { responsive: true, scales: { x: { type: 'linear', position: 'bottom' } } }
+            });
         }
-
-        function updateBuzzerStatus(buzzerId, status) {
-            const icon = document.querySelector(`#${buzzerId} img`);
-            if (icon) {
-                icon.src = status ? 'https://i.imghippo.com/files/6fNBA1725347941.png' : 'https://i.imghippo.com/files/bmspu1725442654.png';
-            }
+    
+        function fetchData() {
+            fetch('data.json')
+                .then(response => response.json())
+                .then(data => {
+                    const temp = data.temperature;
+                    const humidity = data.humidity;
+                    const distance1 = data.distance1;
+                    const distance2 = data.distance2;
+                    const motion = data.motion;
+    
+                    // Update temperature and humidity data
+                    document.getElementById('temptext').textContent = temp;
+                    document.getElementById('humiditytext').textContent = humidity;
+    
+                    // Update temperature chart
+                    tempHumidityData.labels.push(new Date());
+                    tempHumidityData.datasets = [{
+                        label: 'Temperature (°C)',
+                        data: tempHumidityData.labels.map((_, i) => ({ x: i, y: temp })),
+                        borderColor: 'blue',
+                        fill: false
+                    }, {
+                        label: 'Humidity (%)',
+                        data: tempHumidityData.labels.map((_, i) => ({ x: i, y: humidity })),
+                        borderColor: 'green',
+                        fill: false
+                    }];
+                    tempHumidityChart.update();
+    
+                    // Update distance chart
+                    distanceData.labels.push(new Date());
+                    distanceData.datasets = [{
+                        label: 'Distance Sensor 1 (cm)',
+                        data: distanceData.labels.map((_, i) => ({ x: i, y: distance1 })),
+                        borderColor: 'red',
+                        fill: false
+                    }, {
+                        label: 'Distance Sensor 2 (cm)',
+                        data: distanceData.labels.map((_, i) => ({ x: i, y: distance2 })),
+                        borderColor: 'orange',
+                        fill: false
+                    }];
+                    distanceChart.update();
+    
+                    // Update motion sensor data
+                    document.getElementById('PirText').textContent = motion;
+    
+                    // Update motion chart
+                    MotionData.labels.push(new Date());
+                    MotionData.datasets = [{
+                        label: 'Motion Sensor',
+                        data: MotionData.labels.map((_, i) => ({ x: i, y: motion })),
+                        borderColor: 'purple',
+                        fill: false
+                    }];
+                    MotionChart.update();
+                })
+                .catch(error => console.error('Error fetching data:', error));
         }
-
-        setInterval(function() {
-            fetch('/motion_status')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('PirText').textContent = data.motionDetected ? 'Detected' : 'Not Detected';
-                    updateBuzzerStatus('colorbuzzer2', data.motionDetected);
-                });
-
-            fetch('/buzzer_status')
-                .then(response => response.json())
-                .then(data => {
-                    updateBuzzerStatus('colorbuzzer', data.temperatureHumidityBuzzer);
-                    updateBuzzerStatus('colorbuzzer1', data.distanceBuzzer);
-                });
-
-            updateCharts();
-        }, intervalMinutes * 60 * 1000);
+    
+        initializeCharts();
+        setInterval(fetchData, 10000); // Update every 10 seconds
     </script>
 </body>
 </html>
