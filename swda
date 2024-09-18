@@ -157,7 +157,7 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
                         <p style="margin: 0;">Buzzer Status:</p>
-                        <div id="colorbuzzer1">
+                        <div id="colorbuzzer2">
                             <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
                         </div>
                     </div>
@@ -176,7 +176,6 @@
         });
 
         function tabControl(chooseDiv) {
-            console.log("Tab control called with:", chooseDiv); 
             for (let i = 1; i <= 11; i++) {
                 const tab = document.getElementById('tabOpen' + i);
                 if (tab) {
@@ -188,106 +187,193 @@
                 selectedTab.classList.add('active');
             }
         }
+    
+        let tempHumidityChart;
+        let distanceChart;
+        let MotionChart;
 
-        // Fetch initial data from your server
-        fetchDataAndUpdateUI();
+        let temperatureUnit = 'C';
+        let highestTemperature = -Infinity; 
+        const highestTempDisplay = document.getElementById('highestTemp');
+        const intervalMinutes = 1;
+        let intervalStartTime = Date.now();
+        const iconChanger = document.getElementById('colorbuzzer');
+        const iconChanger1 = document.getElementById('colorbuzzer1');
+        const iconChanger2 = document.getElementById('colorbuzzer2');
 
-        // Function to fetch and update data
-        function fetchDataAndUpdateUI() {
-            fetch('data.json') // Replace with your data source
+        const temperatureUnitButton = document.getElementById('toggleUnitButton');
+        temperatureUnitButton.addEventListener('click', function() {
+            temperatureUnit = (temperatureUnit === 'C') ? 'F' : 'C';
+            temperatureUnitButton.innerText = (temperatureUnit === 'C') ? 'Switch to Fahrenheit' : 'Switch to Celsius';
+            updateCharts();
+        });
+
+        function updateCharts() {
+            // Update temperature and humidity chart
+            fetch('/temperature_humidity_data')
                 .then(response => response.json())
                 .then(data => {
-                    // Update Temperature and Humidity data
-                    document.getElementById('temptext').innerText = data.temperature || '--';
-                    document.getElementById('humiditytext').innerText = data.humidity || '--';
-                    document.getElementById('highestTemp').innerText = data.highestTemperature || '--';
+                    const ctxTempHumidity = document.getElementById('tempHumidityChart').getContext('2d');
+                    if (tempHumidityChart) {
+                        tempHumidityChart.destroy();
+                    }
+                    tempHumidityChart = new Chart(ctxTempHumidity, {
+                        type: 'line',
+                        data: {
+                            labels: data.timestamps,
+                            datasets: [
+                                {
+                                    label: 'Temperature (' + temperatureUnit + ')',
+                                    data: data.temperature.map(temp => temperatureUnit === 'C' ? temp : temp * 9/5 + 32),
+                                    borderColor: 'red',
+                                    borderWidth: 1,
+                                    fill: false
+                                },
+                                {
+                                    label: 'Humidity (%)',
+                                    data: data.humidity,
+                                    borderColor: 'blue',
+                                    borderWidth: 1,
+                                    fill: false
+                                }
+                            ]
+                        },
+                        options: {
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Values'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    // Update highest temperature
+                    highestTemperature = Math.max(...data.temperature.map(temp => temperatureUnit === 'C' ? temp : temp * 9/5 + 32));
+                    highestTempDisplay.textContent = highestTemperature.toFixed(2);
+                });
 
-                    // Update Buzzer status
-                    document.getElementById('colorbuzzer').innerHTML = `<img src="${data.buzzerStatusImage}" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">`;
+            // Update distance chart
+            fetch('/distance_data')
+                .then(response => response.json())
+                .then(data => {
+                    const ctxDistance = document.getElementById('distanceChart').getContext('2d');
+                    if (distanceChart) {
+                        distanceChart.destroy();
+                    }
+                    distanceChart = new Chart(ctxDistance, {
+                        type: 'line',
+                        data: {
+                            labels: data.timestamps,
+                            datasets: [
+                                {
+                                    label: 'Distance Sensor 1 (cm)',
+                                    data: data.distance1,
+                                    borderColor: 'green',
+                                    borderWidth: 1,
+                                    fill: false
+                                },
+                                {
+                                    label: 'Distance Sensor 2 (cm)',
+                                    data: data.distance2,
+                                    borderColor: 'purple',
+                                    borderWidth: 1,
+                                    fill: false
+                                }
+                            ]
+                        },
+                        options: {
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Distance (cm)'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
 
-                    // Update Distance Sensor data
-                    document.getElementById('distance1').innerText = data.distance1 || '--';
-                    document.getElementById('distance2').innerText = data.distance2 || '--';
-
-                    // Update Motion Detection data
-                    document.getElementById('PirText').innerText = data.motionDetection || '--';
-
-                    // Update charts
-                    updateCharts(data);
-                })
-                .catch(error => console.error('Error fetching data:', error));
+            // Update motion chart
+            fetch('/motion_data')
+                .then(response => response.json())
+                .then(data => {
+                    const ctxMotion = document.getElementById('MotionChart').getContext('2d');
+                    if (MotionChart) {
+                        MotionChart.destroy();
+                    }
+                    MotionChart = new Chart(ctxMotion, {
+                        type: 'line',
+                        data: {
+                            labels: data.timestamps,
+                            datasets: [
+                                {
+                                    label: 'Motion Detection',
+                                    data: data.motion,
+                                    borderColor: 'orange',
+                                    borderWidth: 1,
+                                    fill: false
+                                }
+                            ]
+                        },
+                        options: {
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Detection'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
         }
 
-        // Function to update charts
-        function updateCharts(data) {
-            // Temperature and Humidity Chart
-            const tempHumidityCtx = document.getElementById('tempHumidityChart').getContext('2d');
-            new Chart(tempHumidityCtx, {
-                type: 'line',
-                data: {
-                    labels: data.tempHumidityLabels || [],
-                    datasets: [{
-                        label: 'Temperature',
-                        data: data.temperatureData || [],
-                        borderColor: 'red',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)'
-                    }, {
-                        label: 'Humidity',
-                        data: data.humidityData || [],
-                        borderColor: 'blue',
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)'
-                    }]
-                }
-            });
-
-            // Distance Chart
-            const distanceCtx = document.getElementById('distanceChart').getContext('2d');
-            new Chart(distanceCtx, {
-                type: 'bar',
-                data: {
-                    labels: data.distanceLabels || [],
-                    datasets: [{
-                        label: 'Distance Sensor 1',
-                        data: data.distance1Data || [],
-                        backgroundColor: 'rgba(255, 159, 64, 0.2)'
-                    }, {
-                        label: 'Distance Sensor 2',
-                        data: data.distance2Data || [],
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)'
-                    }]
-                }
-            });
-
-            // Motion Chart
-            const motionCtx = document.getElementById('MotionChart').getContext('2d');
-            new Chart(motionCtx, {
-                type: 'line',
-                data: {
-                    labels: data.motionLabels || [],
-                    datasets: [{
-                        label: 'Motion Detection',
-                        data: data.motionData || [],
-                        borderColor: 'green',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)'
-                    }]
-                }
-            });
-        }
-
-        // Toggle temperature unit
-        document.getElementById("toggleUnitButton").addEventListener("click", function() {
-            const tempUnitElement = document.getElementById('tempUnit');
-            if (tempUnitElement.innerText === "C") {
-                tempUnitElement.innerText = "F";
-                document.getElementById('temptext').innerText = (parseFloat(document.getElementById('temptext').innerText) * 9/5) + 32;
-                this.innerText = "Switch to Celsius";
-            } else {
-                tempUnitElement.innerText = "C";
-                document.getElementById('temptext').innerText = (parseFloat(document.getElementById('temptext').innerText) - 32) * 5/9;
-                this.innerText = "Switch to Fahrenheit";
+        function updateBuzzerStatus(buzzerId, status) {
+            const icon = document.querySelector(`#${buzzerId} img`);
+            if (icon) {
+                icon.src = status ? 'https://i.imghippo.com/files/6fNBA1725347941.png' : 'https://i.imghippo.com/files/bmspu1725442654.png';
             }
-        });
+        }
+
+        setInterval(function() {
+            fetch('/motion_status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('PirText').textContent = data.motionDetected ? 'Detected' : 'Not Detected';
+                    updateBuzzerStatus('colorbuzzer2', data.motionDetected);
+                });
+
+            fetch('/buzzer_status')
+                .then(response => response.json())
+                .then(data => {
+                    updateBuzzerStatus('colorbuzzer', data.temperatureHumidityBuzzer);
+                    updateBuzzerStatus('colorbuzzer1', data.distanceBuzzer);
+                });
+
+            updateCharts();
+        }, intervalMinutes * 60 * 1000);
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
