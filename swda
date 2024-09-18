@@ -3,120 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EMBEDDED ACTIVITIES WEBSITE</title>
+    <title>Embedded System Act</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
-            box-sizing: border-box;
+        box-sizing: border-box;
         }
         body {
             margin: 0;
             padding: 0;
             background-color: antiquewhite;
             width: 100vw;
-            height: 100vh;
+            height: 100vh; 
             overflow: hidden;
         }
-        #container {
+        .tabOption{
+            background-color:aqua;
+            align-items: center;
+            display:grid;
+            align-content: space-around;
+            justify-content: center;
+            box-sizing:border-box;
+
+            position: relative;
+            transition: width 0.5s ease; 
+            border: 2px solid black;
+            gap:10px
+        }
+        .alltab.data {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            margin: 20px;
+        }
+        
+        #tempHumidityChart {
+            width: 100%;
+            height: 450px;
+            border: 1px solid;       
+        } 
+        #distanceChart {
+            width: 100%;
+            height: 450px;
+            border: 1px solid; 
+        } 
+        p {
+            margin: 0;
+            padding: 0;
+        }
+        h2{
+            align-items: center;
+            text-align: center;
+            font-size: 30px;
+            font-family: Impact, sans-serif;
+            margin: 0;
+            padding: 3px 0;
+            height: auto;
+            margin-top: 10px;
+        }
+        .buttonstyle{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+            height: 40px;
+            width: 300px;
+            font-weight: bold;
+            background-color: black;
+            font-size: 20px;
+            color: whitesmoke;
+        }
+        .texthere{
+            font-size: 30px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .ChartPart{
+            display: flex;
+            justify-content: center;
+            padding: 2px;
+            height: 100%;
+        }
+        .datahere{
+            font-weight: bold;
+            font-size: 32px;
+        }
+
+        .acttab.active{
+            display: block;
+            width: 96%; /* Initial width */
+            height: 90.5%;
+            background-color: blue;
+            position: relative;
+        }
+        .acttab{
+            display: none;
+            border: 2px solid;
+            width: 90%;
+            height: 100%;
+            padding: 3px;
+        }
+        .maintab{
             display: flex;
             width: 100vw;
             height: 100vh;
-            transition: width 0.7s ease;
+            margin: 0;
+            overflow: hidden;
         }
-        #leftDiv {
-            display: grid;
-            background-color: #B99470;
-            width: 0%;
-            height: 100%;
-            position: relative;
-            gap: 2px;
-            transition: width 0.5s ease;
+        .optionbutton{
+            font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            height: 30px;
+            width: auto;
+            font-size: 15px;
+            border-radius: 0%;
+            font-weight: bold; 
         }
-        .MainContent {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            grid-gap: 10px;
-            justify-content: center;
-            align-items: center;
-            height: 99%;
-            padding: 10px;
+        #colorbuzzer{
+            width: 110px;
         }
-        #leftDiv.visible {
-            width: 10%;
+        #colorbuzzer1{
+            width: 110px;
         }
-        #rightDiv {
+        .picmember{
             display: flex;
-            background-color: #FEFAE0;
-            width: 100%;
-            height: 100%;
-            position: relative;
-            gap: 30px;
-        }
-        #rightDiv.expanded {
-            width: 90%;
-        }
-        button {
-            background-color: white;
-            padding: 10px;
-            cursor: pointer;
-            transition: all 0.5s ease;
-        }
-        #toggleButton.center {
-            position: absolute;
-            top: 50%;
-            left: 0.5%;
-            transform: translate(-50%, -50%) rotate(90deg);
-        }
-        .act1_title {
+            border-radius: 30px;
+            align-items: center;
+            justify-content: center;
+            align-content:space-around;
+            flex-direction: column;
+            background-color: lightblue;
             text-align: center;
-            font-size: 50px;
+            gap: 0%;
+            width: 175px; 
+            height: 310px; 
+            flex: 0 3 auto;
+            font-weight: bold;
+            font-family:'Courier New', Courier, monospace;
+            }
+        .picstyle{
+            height: 180px;
+            width: 170px;
+            border-radius:
+            100px; object-fit: 
+            cover; object-position: center;
+            overflow: hidden; 
         }
-        .texthere {
-            font-size: 25px;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-        #tempHumidityChart, #distanceChart, #MotionChart {
+        #contentbox {
             width: 100%;
-            height: 450px;
-            border: 1px solid;
-        }
-        .acttab {
-            display: none;
-        }
-        .acttab.active {
-            display: block;
-            text-align: center;
+            height: 680px;
             position: relative;
-            width: 100%;
+            left: -100%; /* Hide div off the screen to the left */
+            opacity: 0;
+            transition: left 0.6s ease, opacity 0.6s ease; /* Smooth transition */
+            align-items: center;
+            display:grid;
+            align-content: space-around;
+            justify-content: center;
+        }
+
+        #contentbox.visible {
+            left: 0; /* Slide in from left */
+            opacity: 1;
         }
     </style>
 </head>
 <body>
-    <div id="container">
-        <div id="leftDiv">
-            <div class="MainContent">
-                <button class="optionbutton" onclick="tabControl(1)">Activity 1</button>
-                <button class="optionbutton" onclick="tabControl(2)">Activity 2</button>
-                <button class="optionbutton" onclick="tabControl(3)">Activity 3</button>
-                <button class="optionbutton" onclick="tabControl(4)">Activity 4</button>
-                <button class="optionbutton" onclick="tabControl(5)">Activity 5</button>
-                <button class="optionbutton" onclick="tabControl(6)">Activity 6</button>
-                <button class="optionbutton" onclick="tabControl(7)">Activity 7</button>
-                <button class="optionbutton" onclick="tabControl(8)">Activity 8</button>
-                <button class="optionbutton" onclick="tabControl(9)">Activity 9</button>
-                <button class="optionbutton" onclick="tabControl(10)">Activity 10</button>
-                <button class="optionbutton" onclick="tabControl(11)">Members</button>
-            </div>
-        </div>
-        <div id="rightDiv">
-            <div>
-                <button id="toggleButton" class="center" style="border: none; background-color: #B99470; color: black; font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">
-                    Main Content
+    <h2>Bet Coder</h2>
+    
+    <div class="maintab">
+        <div class="tabOption">
+                <p style="text-align: center; font-size: 20px;"> Main Content</p>
+                <button class="optionbutton" onclick="tabControl(1)">
+                    Acivity 1
+                </button >
+                <button class="optionbutton" onclick="tabControl(2)">
+                    Acivity 2
                 </button>
-            </div>
-            <div id="tabOpen1" class="acttab active">
-                <h1 class="act1_title">Activity 1: Temperature & Humidity sensor with Webserver</h1>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
-                    <div style="text-align: left;">
+                <button class="optionbutton" onclick="tabControl(3)">
+                    Acivity 3
+                </button>
+                <button class="optionbutton" onclick="tabControl(4)">
+                    Acivity 4
+                </button>
+                <button class="optionbutton" onclick="tabControl(5)">
+                    Acivity 5
+                </button>
+                <button class="optionbutton" onclick="tabControl(6)">
+                    Acivity 6
+                </button>
+                <button class="optionbutton" onclick="tabControl(7)">
+                    Acivity 7
+                </button>
+                <button class="optionbutton" onclick="tabControl(8)">
+                    Acivity 8
+                </button>
+                <button class="optionbutton" onclick="tabControl(9)">
+                    Acivity 9
+                </button>
+                <button class="optionbutton" onclick="tabControl(10)">
+                    Acivity 10
+                </button>
+                <button class="optionbutton" onclick="tabControl(11)">
+                    Members
+                </button>
+        </div>
+        
+        <div id="tabOpen1" class="acttab" style="background-color:ghostwhite;">
+        
+            <div class="alltab.data">
+                    <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> Activity 1: Temperature & Humidity sensor with Webserver</h1>
+                <div style="display: flex; align-items: center; justify-content:space-between">
+                    <div style="margin-left: 20px;">
                         <p class="texthere">Temperature: <span id="temptext" class="datahere">--</span> <span id="tempUnit" class="datahere">C</span></p>
                         <p class="texthere">Humidity: <span id="humiditytext" class="datahere">--</span> %</p>
                         <p class="texthere">Highest Temperature: <span id="highestTemp" class="datahere">--</span> <span id="tempUnit" class="datahere"></span></p>
@@ -128,161 +224,414 @@
                         </div>
                     </div>
                 </div>
-                <canvas id="tempHumidityChart"></canvas>
-                <div class="ChartPart">
-                    <button id="toggleUnitButton" class="buttonstyle">Switch to Fahrenheit</button>
-                </div>
+                
             </div>
-            <div id="tabOpen2" class="acttab">
-                <h1 class="act1_title">Activity 2: Distance Sensor with Webserver</h1>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
-                    <div style="text-align: left;">
-                        <p class="texthere">First sensor: <span id="distance1" class="datahere">--</span> cm</p>
-                        <p class="texthere">Second sensor: <span id="distance2" class="datahere">--</span> cm</p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                        <p style="margin: 0;">Buzzer Status:</p>
-                        <div id="colorbuzzer1">
-                            <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
-                        </div>
-                    </div>
-                </div>
-                <canvas id="distanceChart"></canvas>
-            </div>
-            <div id="tabOpen3" class="acttab">
-                <h1 class="act1_title">Activity 3: Motion Sensor and Rasp Camera with Webserver</h1>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
-                    <div style="text-align: left;">
-                        <p class="texthere">Motion Detection: <span id="PirText" class="datahere">--</span></p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                        <p style="margin: 0;">Buzzer Status:</p>
-                        <div id="colorbuzzer1">
-                            <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
-                        </div>
-                    </div>
-                </div>
-                <canvas id="MotionChart"></canvas>
+
+            <canvas id="tempHumidityChart"></canvas>
+            <div class="ChartPart">
+                <button id="toggleUnitButton" class="buttonstyle">Switch to Farenheit</button>
             </div>
         </div>
+
+        <div id="tabOpen2"  class="acttab" style="background-color:white;">
         
-    </div> 
+                <div class="alltab.data">
+                        <h1 style="text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> Activity 2: Distance Sensor with Webserver</h1>
+                    <div style="display: flex; align-items: center; justify-content:space-between">
+                        <div style="margin-left: 20px;">
+                            <p class="texthere">Distance: <span id="distance1" class="datahere">--</span> %</p>
+                            <p class="texthere">Distance: <span id="distance21" class="datahere">--</span> %</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
+                            <p style="margin: 0;">Buzzer Status:</p>
+                            <div id="colorbuzzer1">
+                            <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
+                            </div>
+                            <div id="colorbuzzer1">
+                                <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
+                            </div>
+                        </div>
+                    </div>
+    
+                </div>
+    
+                <canvas id="distanceChart"></canvas>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.getElementById("toggleButton").addEventListener("click", function() {
-            const leftDiv = document.getElementById("leftDiv");
-            const rightDiv = document.getElementById("rightDiv");
-            leftDiv.classList.toggle("visible");
-            rightDiv.classList.toggle("expanded");
-        });
+        </div>
 
-        function tabControl(chooseDiv) {
-            for (let i = 1; i <= 11; i++) {
-                const tab = document.getElementById('tabOpen' + i);
-                if (tab) {
-                    tab.classList.remove('active');
+        <div id="tabOpen3"  class="acttab"> NO CONTENT </div>
+        <div id="tabOpen4"  class="acttab">NO CONTENT</div>
+        <div id="tabOpen5"  class="acttab">NO CONTENT</div>
+        <div id="tabOpen6"  class="acttab">NO CONTENT</div>
+        <div id="tabOpen7"  class="acttab">NO CONTENT</div>
+        <div id="tabOpen8"  class="acttab">NO CONTENT</div>
+        <div id="tabOpen9"  class="acttab">NO CONTENT</div>
+        <div id="tabOpen10" class="acttab">NO CONTENT</div>
+
+        <div id="tabOpen11"  class="acttab active">
+
+            <div class="alltab.data">
+                <p style="font-weight: bold; font-size: 20px; text-align: center; font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif"> MEMBERS:</p>
+            </div>
+            <div style="flex-direction: column; display: grid; padding: 15px; justify-content: space-around; display: flex; color: lightslategray; width: 98%; height: 84%; background-color:darkgray">
+                <div style="display: flex; justify-content: space-around;">
+                    <div class="picmember">
+                       <img src="https://i.imghippo.com/files/w5Gha1725511581.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                       <p style="margin-bottom: 10px; color: black;">LEADER</p>
+                       <p style="font-size: 20px; color: black;">ABANZADO RJAY</p>
+                    </div>
+                    <div class="picmember" >
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/YizH91725511907.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">PROGRAMMER 1</p>
+                            <p style="font-size: 20px; color: black;">PINAGAYAO NAWAP</p>
+                         </div>
+                    </div>
+                    <div class="picmember" >
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/Ev7NN1725512029.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">PROGRAMMER 2</p>
+                            <p style="font-size: 20px; color: black;">PALANAS JOHNPAUL</p>
+                         </div>
+                    </div>
+                    <div class="picmember" >
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/y34HS1725512096.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">RESEARCHER</p>
+                            <p style="font-size: 20px; color: black;">GINEZ DRAKE</p>
+                         </div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-around; ">
+                    <div  class="picmember">
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/pafus1725512199.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">HARDWARE 1</p>
+                            <p style="font-size: 20px; color: black;">MERINO MARK ANDREW</p>
+                         </div>
+                    </div>
+                    <div  class="picmember" >
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/kRVJG1725512319.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">HARDWARE 2</p>
+                            <p style="font-size: 20px; color: black;">JAPON JONATHAN</p>
+                         </div>
+                    </div>
+                    <div  class="picmember">
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/WA8RR1725512449.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">DOCUMENTARY 1</p>
+                            <p style="font-size: 20px; color: black;">VILLARBA JAMAICA</p>
+                         </div>
+                    </div>
+                    <div  class="picmember">
+                        <div class="picmember">
+                            <img src="https://i.imghippo.com/files/FTeFd1725512511.jpg" border="1" alt ="1" class="picstyle" style="margin-bottom: 25px;">
+                            <p style="margin-bottom: 10px; color: black;">DOCUMENTARY 2</p>
+                            <p style="font-size: 20px; color: black;">URSOLINO ALBRIE</p>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+<script>
+    document.getElementById("toggleButton1").addEventListener("click", function() {
+    const contentbox = document.getElementById("contentbox");
+    contentbox.classList.toggle("visible");
+    });
+
+    function tabControl(chooseDiv) {
+        for (let i = 1; i <= 11; i++) {
+            document.getElementById('tabOpen' + i).classList.remove('active');
+        }
+        document.getElementById('tabOpen' + chooseDiv).classList.add('active');
+    }
+    
+    let tempHumidityChart;
+    let distanceChart;
+    let temperatureUnit = 'C';
+    let highestTemperature = -Infinity; 
+    const highestTempDisplay = document.getElementById('highestTemp');
+    const intervalMinutes = 1;
+    let intervalStartTime = Date.now();
+    const iconChanger = document.getElementById('colorbuzzer');
+    const iconChanger1 = document.getElementById('colorbuzzer1');
+
+    function convertToFahrenheit(celsius) {
+        return (celsius * 9/5) + 32;
+    }
+
+    function convertToKelvin(celsius) {
+        return celsius + 273.15;
+    }
+
+    function fetchDataAndUpdateCharts() {
+        fetch('/Raspi_data')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
                 }
-            }
-            const selectedTab = document.getElementById('tabOpen' + chooseDiv);
-            if (selectedTab) {
-                selectedTab.classList.add('active');
-            }
-        }
-    
-        let tempHumidityChart;
-        let distanceChart;
-        let MotionChart;
-        let tempHumidityData = { labels: [], datasets: [] };
-        let distanceData = { labels: [], datasets: [] };
-        let MotionData = { labels: [], datasets: [] };
-    
-        function initializeCharts() {
-            const ctxTempHumidity = document.getElementById('tempHumidityChart').getContext('2d');
-            const ctxDistance = document.getElementById('distanceChart').getContext('2d');
-            const ctxMotion = document.getElementById('MotionChart').getContext('2d');
-    
-            tempHumidityChart = new Chart(ctxTempHumidity, {
-                type: 'line',
-                data: tempHumidityData,
-                options: { responsive: true, scales: { x: { type: 'linear', position: 'bottom' } } }
-            });
-    
-            distanceChart = new Chart(ctxDistance, {
-                type: 'line',
-                data: distanceData,
-                options: { responsive: true, scales: { x: { type: 'linear', position: 'bottom' } } }
-            });
-    
-            MotionChart = new Chart(ctxMotion, {
-                type: 'line',
-                data: MotionData,
-                options: { responsive: true, scales: { x: { type: 'linear', position: 'bottom' } } }
-            });
-        }
-    
-        function fetchData() {
-            fetch('data.json')
-                .then(response => response.json())
-                .then(data => {
-                    const temp = data.temperature;
-                    const humidity = data.humidity;
-                    const distance1 = data.distance1;
-                    const distance2 = data.distance2;
-                    const motion = data.motion;
-    
-                    // Update temperature and humidity data
-                    document.getElementById('temptext').textContent = temp;
-                    document.getElementById('humiditytext').textContent = humidity;
-    
-                    // Update temperature chart
-                    tempHumidityData.labels.push(new Date());
-                    tempHumidityData.datasets = [{
-                        label: 'Temperature (°C)',
-                        data: tempHumidityData.labels.map((_, i) => ({ x: i, y: temp })),
-                        borderColor: 'blue',
-                        fill: false
-                    }, {
-                        label: 'Humidity (%)',
-                        data: tempHumidityData.labels.map((_, i) => ({ x: i, y: humidity })),
-                        borderColor: 'green',
-                        fill: false
-                    }];
+                return response.json();
+            })
+            .then(data => {
+                let tempCelsius = data.temperature;
+                let humidity = data.humidity;
+                let distance = data.distance;
+                let distance2 = data.distance2;
+                let temp;
+                
+                if (tempCelsius === null || typeof tempCelsius === 'undefined') {
+                    tempCelsius = 0; 
+                }
+
+                if (humidity === null || typeof humidity === 'undefined') {
+                    humidity = 0; 
+                }
+
+                if (distance === null || typeof distance === 'undefined') {
+                    distance = 1023; 
+                }
+
+                if (distance2 === null || typeof distance2 === 'undefined') {
+                    distance2 = 1023;
+                }
+
+                switch (temperatureUnit) {
+                    case 'C':
+                        temp = tempCelsius;
+                        iconChanger.style.backgroundColor= 'ghostwhite'
+                        break;
+                    case 'F':
+                        temp = convertToFahrenheit(tempCelsius);
+                        if(temp => 100.4){
+                            iconChanger.style.backgroundColor = 'red'
+                        }else{
+                            iconChanger.style.backgroundColor= 'ghostwhite'
+                        }
+                        break;
+                    case 'K':
+                        temp = convertToKelvin(tempCelsius);
+                        if(temp => 311.15){
+                            iconChanger.style.backgroundColor = 'red'
+                        }else{
+                            iconChanger.style.backgroundColor= 'ghostwhite'
+                        }
+                        break;
+                }
+                
+                if (!isNaN(temp) && temp > highestTemperature) {
+                    highestTemperature = temp;
+                }
+                
+                if(distance <= 6){
+                        iconChanger1.style.backgroundColor = 'red'
+                    }else{
+                        iconChanger1.style.backgroundColor= 'ghostwhite'
+                   }
+
+                
+                const now = Date.now();
+                if (temp > highestTemperature) {
+                    highestTemperature = temp;
+                }
+                if (now - intervalStartTime >= intervalMinutes * 60 * 1000) {
+
+                    highestTempDisplay.textContent = `${highestTemperature.toFixed(1)} ${temperatureUnit}`;
+                    
+                    highestTemperature = -Infinity;
+                    intervalStartTime = now;
+                }
+
+                document.getElementById('temptext').textContent = isNaN(temp) ? 'N/A' : `${temp.toFixed(2)}`;
+                document.getElementById('tempUnit').textContent = temperatureUnit;
+                document.getElementById('humiditytext').textContent = isNaN(humidity) ? 'N/A' : `${humidity.toFixed(2)}`;
+                document.getElementById('distance1').textContent = isNaN(distance) ? 'N/A' : `${distance.toFixed(2)} cm`;
+                document.getElementById('distance21').textContent = isNaN(distance2) ? 'N/A' : `${distance2.toFixed(2)} cm`;
+
+                
+                if (tempHumidityChart) {
+                    tempHumidityChart.data.datasets[0].data.push(temp);
+                    tempHumidityChart.data.datasets[1].data.push(humidity);
+
+                    const maxDataPoints = 5000;
+                    if (tempHumidityChart.data.datasets[0].data.length > maxDataPoints) {
+                        tempHumidityChart.data.datasets[0].data.shift();
+                        tempHumidityChart.data.datasets[1].data.shift();
+                    }
+
+                    tempHumidityChart.data.labels.push('');
+                    if (tempHumidityChart.data.labels.length > maxDataPoints) {
+                        tempHumidityChart.data.labels.shift();
+                    }
+
                     tempHumidityChart.update();
-    
-                    // Update distance chart
-                    distanceData.labels.push(new Date());
-                    distanceData.datasets = [{
-                        label: 'Distance Sensor 1 (cm)',
-                        data: distanceData.labels.map((_, i) => ({ x: i, y: distance1 })),
-                        borderColor: 'red',
-                        fill: false
-                    }, {
-                        label: 'Distance Sensor 2 (cm)',
-                        data: distanceData.labels.map((_, i) => ({ x: i, y: distance2 })),
-                        borderColor: 'orange',
-                        fill: false
-                    }];
+                } else {
+                    const ctxTempHumidity = document.getElementById('tempHumidityChart').getContext('2d');
+                    tempHumidityChart = new Chart(ctxTempHumidity, {
+                        type: 'line',
+                        data: {
+                            labels: [''],
+                            datasets: [
+                                {
+                                    label: `Temperature (${temperatureUnit})`,
+                                    data: [temp],
+                                    borderColor: 'red',
+                                    fill: false
+                                },
+                                {
+                                    label: 'Humidity (%)',
+                                    data: [humidity],
+                                    borderColor: 'blue',
+                                    fill: false
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Value'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if (distanceChart) {
+                    distanceChart.data.datasets[0].data.push(distance);
+                    distanceChart.data.datasets[1].data.push(distance2);
+
+                    const maxDataPoints = 5000;
+                    if (distanceChart.data.datasets[0].data.length > maxDataPoints) {
+                        distanceChart.data.datasets[0].data.shift();
+                    }
+                    if (distanceChart.data.datasets[1].data.length > maxDataPoints) {                   
+                        distanceChart.data.datasets[1].data.shift();
+                    }
+
+                    distanceChart.data.labels.push('');
+                    if (distanceChart.data.labels.length > maxDataPoints) {
+                        distanceChart.data.labels.shift();
+                    }
+
                     distanceChart.update();
-    
-                    // Update motion sensor data
-                    document.getElementById('PirText').textContent = motion;
-    
-                    // Update motion chart
-                    MotionData.labels.push(new Date());
-                    MotionData.datasets = [{
-                        label: 'Motion Sensor',
-                        data: MotionData.labels.map((_, i) => ({ x: i, y: motion })),
-                        borderColor: 'purple',
-                        fill: false
-                    }];
-                    MotionChart.update();
-                })
-                .catch(error => console.error('Error fetching data:', error));
+                } else {
+                    const ctxDistance = document.getElementById('distanceChart').getContext('2d');
+                    distanceChart = new Chart(ctxDistance, {
+                        type: 'line',
+                        data: {
+                            labels: [''],
+                            datasets: [{
+                                    label: 'First Seensor (cm)',
+                                    data: [distance],
+                                    borderColor: 'black',
+                                    fill: false
+                                },
+                                {
+                                    label: 'Second Sensor (%)',
+                                    data: [distance2],
+                                    borderColor: 'orange',
+                                    fill: false
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                },
+                                y: {
+                                    reverse: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Distance (cm)'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching the data:', error);
+            });
+    }
+
+    function toggleTemperatureUnit() {
+        switch (temperatureUnit) {
+            case 'C':
+                temperatureUnit = 'F';
+                document.getElementById('toggleUnitButton').textContent = 'Switch to Kelvin';
+                if (tempHumidityChart) {
+                    tempHumidityChart.data.labels = [];
+                    tempHumidityChart.data.datasets.forEach(dataset => {
+                        dataset.data = [];
+                    });
+                    tempHumidityChart.update();
+                    highestTemperature = -Infinity;
+                    highestTempDisplay.textContent = `${temperatureUnit}`;
+                }
+                
+            break;
+            case 'F':
+                temperatureUnit = 'K';
+                document.getElementById('toggleUnitButton').textContent = 'Switch to Celsius';
+                if (tempHumidityChart) {
+                    tempHumidityChart.data.labels = [];
+                    tempHumidityChart.data.datasets.forEach(dataset => {
+                        dataset.data = [];
+                    });
+                    tempHumidityChart.update();
+                    highestTemperature = -Infinity;
+                    highestTempDisplay.textContent = `${temperatureUnit}`;
+                }
+
+            break;
+            case 'K':
+                temperatureUnit = 'C';
+                document.getElementById('toggleUnitButton').textContent = 'Switch to Fahrenheit';
+                if(temp => 38){
+                    iconChanger.style.backgroundColor = 'red'
+                }else{
+                    iconChanger.style.backgroundColor= 'ghostwhite'
+                }
+                if (tempHumidityChart) {
+                    tempHumidityChart.data.labels = [];
+                    tempHumidityChart.data.datasets.forEach(dataset => {
+                        dataset.data = [];
+                    });
+                    tempHumidityChart.update();
+                    highestTemperature = -Infinity;
+                    highestTempDisplay.textContent = `${temperatureUnit}`;
+                }
+
+            break;
         }
-    
-        initializeCharts();
-        setInterval(fetchData, 10000); // Update every 10 seconds
-    </script>
+ 
+        fetchDataAndUpdateCharts();
+    }
+
+    fetchDataAndUpdateCharts();
+    setInterval(fetchDataAndUpdateCharts, 1500);
+    document.getElementById('toggleUnitButton').addEventListener('click', toggleTemperatureUnit);
+</script>
+
 </body>
 </html>
