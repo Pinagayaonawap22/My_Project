@@ -1,28 +1,57 @@
-import smbus
 import time
+import RPi.GPIO as GPIO
+from flask import Flask, render_template, jsonify
 
-# Initialize I2C
-bus = smbus.SMBus(1)
-camera_address = 0x21  # OV7670 default I2C address
+app = Flask(__name__)
 
-# Function to read from the camera registers
-def read_camera_register(reg_address):
-    try:
-        return bus.read_byte_data(camera_address, reg_address)
-    except Exception as e:
-        print(f"Error reading from camera register: {e}")
-        return None
+# GPIO setup
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
 
-# Test I2C Communication
-def test_camera():
-    # Register 0x0A is just an example, it may vary depending on the camera configuration
-    reg_address = 0x0A
-    value = read_camera_register(reg_address)
-    
-    if value is not None:
-        print(f"Register {hex(reg_address)}: {hex(value)}")
+# Define GPIO pins
+buzzer_pin = 20
+pir_pin = 26
+
+# Set up GPIO pins
+GPIO.setup(buzzer_pin, GPIO.OUT)
+GPIO.setup(pir_pin, GPIO.IN)
+
+def buzzer_on():
+    GPIO.output(buzzer_pin, GPIO.HIGH)
+
+def buzzer_off():
+    GPIO.output(buzzer_pin, GPIO.LOW)
+
+def buzzer_sensor(duration):
+    GPIO.output(buzzer_pin, GPIO.HIGH)
+    time.sleep(duration)
+    GPIO.output(buzzer_pin, GPIO.LOW)
+
+def Motion_detection_Web():
+    while True:
+        if GPIO.input(pir_pin):
+            buzzer_sensor(1)
+            pirValue = True
+        else:
+            buzzer_off()
+            pirValue = False
+        time.sleep(0.1)  # Short delay to avoid rapid polling
+        return pirValue
+
+@app.route('/')
+def index():
+    return render_template('index1.html')
+
+@app.route('/Raspi_data')
+def Raspi_data():
+    MotionData = Motion_detection_Web()
+    if GPIO.input(pir_pin):
+        print("Motion detected!")
     else:
-        print("Failed to read from camera register")
+        print("No motion")
+    
+    return jsonify(Motion=MotionData)
 
-# Run the test
-test_camera()
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5012, debug=True)
+
