@@ -1,295 +1,57 @@
-<script>
-    document.getElementById("toggleButton").addEventListener("click", function() {
-        const leftDiv = document.getElementById("leftDiv");
-        const rightDiv = document.getElementById("rightDiv");
-        leftDiv.classList.toggle("visible");
-        rightDiv.classList.toggle("expanded");
-    });
+import time
+import RPi.GPIO as GPIO
+from flask import Flask, render_template, jsonify
 
-    function tabControl(chooseDiv) {
-        console.log("Tab control called with:", chooseDiv);
-        for (let i = 1; i <= 11; i++) {
-            const tab = document.getElementById('tabOpen' + i);
-            if (tab) {
-                tab.classList.remove('active');
-            }
-        }
-        const selectedTab = document.getElementById('tabOpen' + chooseDiv);
-        if (selectedTab) {
-            selectedTab.classList.add('active');
-        } else {
-            console.error("Tab not found:", 'tabOpen' + chooseDiv);
-        }
-    }
+app = Flask(__name__)
 
-    let tempHumidityChart;
-    let distanceChart;
-    let MotionChart;
+# GPIO setup
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
 
-    let temperatureUnit = 'C';
-    let highestTemperature = -Infinity;
-    const highestTempDisplay = document.getElementById('highestTemp');
-    const intervalMinutes = 1;
-    let intervalStartTime = Date.now();
-    const iconChanger = document.getElementById('colorbuzzer');
-    const iconChanger1 = document.getElementById('colorbuzzer1');
+# Define GPIO pins
+buzzer_pin = 20
+pir_pin = 26
 
-    function convertToFahrenheit(celsius) {
-        return (celsius * 9/5) + 32;
-    }
+# Set up GPIO pins
+GPIO.setup(buzzer_pin, GPIO.OUT)
+GPIO.setup(pir_pin, GPIO.IN)
 
-    function convertToKelvin(celsius) {
-        return celsius + 273.15;
-    }
+def buzzer_on():
+    GPIO.output(buzzer_pin, GPIO.HIGH)
 
-    function fetchDataAndUpdateCharts() {
-        fetch('/Raspi_data')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                let tempCelsius = data.temperature || 0;
-                let humidity = data.humidity || 0;
-                let distance = data.distance || 1023;
-                let distance2 = data.distance2 || 1023;
-                let Pirmotion = data.Motion ? 1 : 0;
-                const MotionText = data.Motion ? "Motion Detected!" : "No Motion";
-                let temp;
+def buzzer_off():
+    GPIO.output(buzzer_pin, GPIO.LOW)
 
-                switch (temperatureUnit) {
-                    case 'C':
-                        temp = tempCelsius;
-                        iconChanger.style.backgroundColor = 'ghostwhite';
-                        break;
-                    case 'F':
-                        temp = convertToFahrenheit(tempCelsius);
-                        iconChanger.style.backgroundColor = temp >= 100.4 ? 'red' : 'ghostwhite';
-                        break;
-                    case 'K':
-                        temp = convertToKelvin(tempCelsius);
-                        iconChanger.style.backgroundColor = temp >= 311.15 ? 'red' : 'ghostwhite';
-                        break;
-                }
+def buzzer_sensor(duration):
+    GPIO.output(buzzer_pin, GPIO.HIGH)
+    time.sleep(duration)
+    GPIO.output(buzzer_pin, GPIO.LOW)
 
-                if (!isNaN(temp) && temp > highestTemperature) {
-                    highestTemperature = temp;
-                }
+def Motion_detection_Web():
+    while True:
+        if GPIO.input(pir_pin):
+            buzzer_sensor(1)
+            pirValue = True
+        else:
+            buzzer_off()
+            pirValue = False
+        time.sleep(0.1)  # Short delay to avoid rapid polling
+        return pirValue
 
-                iconChanger1.style.backgroundColor = distance <= 6 ? 'red' : 'ghostwhite';
+@app.route('/')
+def index():
+    return render_template('index1.html')
 
-                const now = Date.now();
-                if (now - intervalStartTime >= intervalMinutes * 60 * 1000) {
-                    highestTempDisplay.textContent = `${highestTemperature.toFixed(1)} ${temperatureUnit}`;
-                    highestTemperature = -Infinity;
-                    intervalStartTime = now;
-                }
+@app.route('/Raspi_data')
+def Raspi_data():
+    MotionData = Motion_detection_Web()
+    if GPIO.input(pir_pin):
+        print("Motion detected!")
+    else:
+        print("No motion")
+    
+    return jsonify(Motion=MotionData)
 
-                document.getElementById('temptext').textContent = isNaN(temp) ? 'N/A' : `${temp.toFixed(2)}`;
-                document.getElementById('tempUnit').textContent = temperatureUnit;
-                document.getElementById('humiditytext').textContent = isNaN(humidity) ? 'N/A' : `${humidity.toFixed(2)}`;
-                document.getElementById('distance1').textContent = isNaN(distance) ? 'N/A' : `${distance.toFixed(2)} cm`;
-                document.getElementById('distance21').textContent = isNaN(distance2) ? 'N/A' : `${distance2.toFixed(2)} cm`;
-                document.getElementById('PirText').textContent = `Current Status: ${MotionText}`;
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5012, debug=True)
 
-                if (tempHumidityChart) {
-                    tempHumidityChart.data.datasets[0].data.push(temp);
-                    tempHumidityChart.data.datasets[1].data.push(humidity);
-
-                    const maxDataPoints = 5000;
-                    if (tempHumidityChart.data.datasets[0].data.length > maxDataPoints) {
-                        tempHumidityChart.data.datasets[0].data.shift();
-                        tempHumidityChart.data.datasets[1].data.shift();
-                    }
-
-                    tempHumidityChart.data.labels.push('');
-                    if (tempHumidityChart.data.labels.length > maxDataPoints) {
-                        tempHumidityChart.data.labels.shift();
-                    }
-
-                    tempHumidityChart.update();
-                } else {
-                    const ctxTempHumidity = document.getElementById('tempHumidityChart').getContext('2d');
-                    tempHumidityChart = new Chart(ctxTempHumidity, {
-                        type: 'line',
-                        data: {
-                            labels: [''],
-                            datasets: [
-                                {
-                                    label: `Temperature (${temperatureUnit})`,
-                                    data: [temp],
-                                    borderColor: 'red',
-                                    fill: false
-                                },
-                                {
-                                    label: 'Humidity (%)',
-                                    data: [humidity],
-                                    borderColor: 'blue',
-                                    fill: false
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
-                                    }
-                                },
-                                y: {
-                                    title: {
-                                        display: true,
-                                        text: 'Value'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-
-                if (distanceChart) {
-                    distanceChart.data.datasets[0].data.push(distance);
-                    distanceChart.data.datasets[1].data.push(distance2);
-
-                    const maxDataPoints = 100;
-                    if (distanceChart.data.datasets[0].data.length > maxDataPoints) {
-                        distanceChart.data.datasets[0].data.shift();
-                    }
-                    if (distanceChart.data.datasets[1].data.length > maxDataPoints) {
-                        distanceChart.data.datasets[1].data.shift();
-                    }
-
-                    distanceChart.data.labels.push('');
-                    if (distanceChart.data.labels.length > maxDataPoints) {
-                        distanceChart.data.labels.shift();
-                    }
-
-                    distanceChart.update();
-                } else {
-                    const ctxDistance = document.getElementById('distanceChart').getContext('2d');
-                    distanceChart = new Chart(ctxDistance, {
-                        type: 'line',
-                        data: {
-                            labels: [''],
-                            datasets: [
-                                {
-                                    label: 'First Sensor (cm)',
-                                    data: [distance],
-                                    borderColor: 'black',
-                                    fill: false
-                                },
-                                {
-                                    label: 'Second Sensor (cm)',
-                                    data: [distance2],
-                                    borderColor: 'orange',
-                                    fill: false
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
-                                    }
-                                },
-                                y: {
-                                    reverse: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Distance (cm)'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-
-                if (MotionChart) {
-                    MotionChart.data.datasets[0].data.push(Pirmotion);
-
-                    const maxDataPoints = 100;
-                    if (MotionChart.data.datasets[0].data.length > maxDataPoints) {
-                        MotionChart.data.datasets[0].data.shift();
-                    }
-
-                    MotionChart.data.labels.push('');
-                    if (MotionChart.data.labels.length > maxDataPoints) {
-                        MotionChart.data.labels.shift();
-                    }
-
-                    MotionChart.update();
-                } else {
-                    const ctxMotion = document.getElementById('MotionChart').getContext('2d');
-                    MotionChart = new Chart(ctxMotion, {
-                        type: 'line',
-                        data: {
-                            labels: [''],
-                            datasets: [
-                                {
-                                    label: 'Motion Detection',
-                                    data: [Pirmotion],
-                                    borderColor: 'green',
-                                    fill: false
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
-                                    }
-                                },
-                                y: {
-                                    reverse: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Motion'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching the data:', error);
-            });
-    }
-
-    function toggleTemperatureUnit() {
-        switch (temperatureUnit) {
-            case 'C':
-                temperatureUnit = 'F';
-                document.getElementById('toggleUnitButton').textContent = 'Switch to Kelvin';
-                break;
-            case 'F':
-                temperatureUnit = 'K';
-                document.getElementById('toggleUnitButton').textContent = 'Switch to Celsius';
-                break;
-            case 'K':
-                temperatureUnit = 'C';
-                document.getElementById('toggleUnitButton').textContent = 'Switch to Fahrenheit';
-                break;
-        }
-
-        if (tempHumidityChart) {
-            tempHumidityChart.data.labels = [];
-            tempHumidityChart.data.datasets.forEach(dataset => dataset.data = []);
-            fetchDataAndUpdateCharts();
-        }
-    }
-
-    document.getElementById('toggleUnitButton').addEventListener('click', toggleTemperatureUnit);
-
-    setInterval(fetchDataAndUpdateCharts, 10000); // Fetch data every 10 seconds
-</script>
