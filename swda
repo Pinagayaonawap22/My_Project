@@ -153,7 +153,7 @@
                 <h1 class="act1_title">Activity 3: Motion Sensor and Rasp Camera with Webserver</h1>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
                     <div style="text-align: left;">
-                        <p class="texthere">First sensor: <span id="distance1" class="datahere">--</span> cm</p>
+                        <p class="texthere">Motion Detection: <span id="PirText" class="datahere">--</span></p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
                         <p style="margin: 0;">Buzzer Status:</p>
@@ -177,7 +177,7 @@
         });
 
         function tabControl(chooseDiv) {
-            console.log("Tab control called with:", chooseDiv); // Debugging line
+            console.log("Tab control called with:", chooseDiv); 
             for (let i = 1; i <= 11; i++) {
                 const tab = document.getElementById('tabOpen' + i);
                 if (tab) {
@@ -188,12 +188,14 @@
             if (selectedTab) {
                 selectedTab.classList.add('active');
             } else {
-                console.error("Tab not found:", 'tabOpen' + chooseDiv); // Debugging line
+                console.error("Tab not found:", 'tabOpen' + chooseDiv);
             }
         }
     
     let tempHumidityChart;
     let distanceChart;
+    let MotionChart;
+
     let temperatureUnit = 'C';
     let highestTemperature = -Infinity; 
     const highestTempDisplay = document.getElementById('highestTemp');
@@ -223,6 +225,7 @@
                 let humidity = data.humidity;
                 let distance = data.distance;
                 let distance2 = data.distance2;
+                let Pirmotion = data.Motion;
                 let temp;
                 
                 if (tempCelsius === null || typeof tempCelsius === 'undefined') {
@@ -292,6 +295,7 @@
                 document.getElementById('humiditytext').textContent = isNaN(humidity) ? 'N/A' : `${humidity.toFixed(2)}`;
                 document.getElementById('distance1').textContent = isNaN(distance) ? 'N/A' : `${distance.toFixed(2)} cm`;
                 document.getElementById('distance21').textContent = isNaN(distance2) ? 'N/A' : `${distance2.toFixed(2)} cm`;
+                document.getElementById('PirText').textContent = Pirmotion;
 
                 
                 if (tempHumidityChart) {
@@ -409,6 +413,59 @@
                         }
                     });
                 }
+
+                if (MotionChart) {
+                    MotionChart.data.datasets[0].data.push(distance);
+                    MotionChart.data.datasets[1].data.push(distance2);
+
+                    const maxDataPoints = 100;
+                    if (MotionChart.data.datasets[0].data.length > maxDataPoints) {
+                        MotionChart.data.datasets[0].data.shift();
+                    }
+                    if (MotionChart.data.datasets[1].data.length > maxDataPoints) {                   
+                        MotionChart.data.datasets[1].data.shift();
+                    }
+
+                    MotionChart.data.labels.push('');
+                    if (MotionChart.data.labels.length > maxDataPoints) {
+                        MotionChart.data.labels.shift();
+                    }
+
+                    MotionChart.update();
+                } else {
+                    const ctxMotion = document.getElementById('MotionChart').getContext('2d');
+                    MotionChart = new Chart(ctxMotion, {
+                        type: 'line',
+                        data: {
+                            labels: [''],
+                            datasets: [{
+                                    label: 'Motion Detection',
+                                    data: [distance],
+                                    borderColor: 'green',
+                                    fill: false
+                                }],
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                },
+                                y: {
+                                    reverse: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Motion'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
             })
             .catch(error => {
                 console.error('Error fetching the data:', error);
