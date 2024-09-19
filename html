@@ -1,280 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EMBEDDED ACTIVITIES WEBSITE</title>
-    <style>
-        * {
-            box-sizing: border-box;
+        async function fetchData() {
+            const response = await fetch('file_motion.txt');
+            const text = await response.text();
+            // Ensure the data is properly handled if there are extra newlines
+            return text.split('\n').filter(line => line.trim() !== '').map(line => parseInt(line, 10));
         }
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: antiquewhite;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
-        #container {
-            display: flex;
-            width: 100vw;
-            height: 100vh;
-            transition: width 0.7s ease;
-        }
-        #leftDiv {
-            display: grid;
-            background-color: #B99470;
-            width: 0%;
-            height: 100%;
-            position: relative;
-            gap: 2px;
-            transition: width 0.5s ease;
-        }
-        .MainContent {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            grid-gap: 10px;
-            justify-content: center;
-            align-items: center;
-            height: 99%;
-            padding: 10px;
-        }
-        #leftDiv.visible {
-            width: 10%;
-        }
-        #rightDiv {
-            display: flex;
-            background-color: #FEFAE0;
-            width: 100%;
-            height: 100%;
-            position: relative;
-            gap: 30px;
-        }
-        #rightDiv.expanded {
-            width: 90%;
-        }
-        button {
-            background-color: white;
-            padding: 10px;
-            cursor: pointer;
-            transition: all 0.5s ease;
-        }
-        #toggleButton.center {
-            position: absolute;
-            top: 50%;
-            left: 0.5%;
-            transform: translate(-50%, -50%) rotate(90deg);
-        }
-        .act1_title {
-            text-align: center;
-            font-size: 50px;
-        }
-        .texthere {
-            font-size: 25px;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-        #tempHumidityChart, #distanceChart {
-            width: 100%;
-            height: 450px;
-            border: 1px solid;
-        }
-        .acttab {
-            display: none;
-        }
-        .acttab.active {
-            display: block;
-            text-align: center;
-            position: relative;
-            width: 100%;
-        }
-    </style>
-</head>
-<body>
-    <div id="container">
-        <div id="leftDiv">
-            <div class="MainContent">
-                <button class="optionbutton" onclick="tabControl(1)">Activity 1</button>
-                <button class="optionbutton" onclick="tabControl(2)">Activity 2</button>
-                <button class="optionbutton" onclick="tabControl(3)">Activity 3</button>
-                <button class="optionbutton" onclick="tabControl(4)">Activity 4</button>
-                <button class="optionbutton" onclick="tabControl(5)">Activity 5</button>
-                <button class="optionbutton" onclick="tabControl(6)">Activity 6</button>
-                <button class="optionbutton" onclick="tabControl(7)">Activity 7</button>
-                <button class="optionbutton" onclick="tabControl(8)">Activity 8</button>
-                <button class="optionbutton" onclick="tabControl(9)">Activity 9</button>
-                <button class="optionbutton" onclick="tabControl(10)">Activity 10</button>
-                <button class="optionbutton" onclick="tabControl(11)">Members</button>
-            </div>
-        </div>
-        <div id="rightDiv">
-            <div>
-                <button id="toggleButton" class="center" style="border: none; background-color: #B99470; color: black; font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">
-                    Main Content
-                </button>
-            </div>
-            <div id="tabOpen1" class="acttab active">
-                <h1 class="act1_title">Activity 1: Temperature & Humidity sensor with Webserver</h1>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
-                    <div style="text-align: left;">
-                        <p class="texthere">Temperature: <span id="temptext" class="datahere">--</span> <span id="tempUnit" class="datahere">C</span></p>
-                        <p class="texthere">Humidity: <span id="humiditytext" class="datahere">--</span> %</p>
-                        <p class="texthere">Highest Temperature: <span id="highestTemp" class="datahere">--</span> <span id="tempUnit" class="datahere"></span></p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                        <p style="margin: 0;">Buzzer Status:</p>
-                        <div id="colorbuzzer">
-                            <img src="https://i.imghippo.com/files/6fNBA1725347941.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
-                        </div>
-                    </div>
-                </div>
-                <canvas id="tempHumidityChart"></canvas>
-                <div class="ChartPart">
-                    <button id="toggleUnitButton" class="buttonstyle">Switch to Fahrenheit</button>
-                </div>
-            </div>
-            <div id="tabOpen2" class="acttab">
-                <h1 class="act1_title">Activity 2: Distance Sensor with Webserver</h1>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
-                    <div style="text-align: left;">
-                        <p class="texthere">First sensor: <span id="distance1" class="datahere">--</span> cm</p>
-                        <p class="texthere">Second sensor: <span id="distance2" class="datahere">--</span> cm</p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                        <p style="margin: 0;">Buzzer Status:</p>
-                        <div id="colorbuzzer1">
-                            <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
-                        </div>
-                    </div>
-                </div>
-                <canvas id="distanceChart"></canvas>
-            </div>
-            <div id="tabOpen3" class="acttab">
-                <h1 class="act1_title">Activity 3: Motion Sensor and Rasp Camera with Webserver</h1>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
-                    <div style="text-align: left;">
-                        <p class="texthere">Motion Detection: <span id="PirText" class="datahere">--</span></p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                        <p style="margin: 0;">Buzzer Status:</p>
-                        <div id="colorbuzzer1">
-                            <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
-                        </div>
-                    </div>
-                </div>
-                <canvas id="motionChart"></canvas>
-            </div>
-        </div>
-        
-    </div> 
 
-<script>
-    document.getElementById("toggleButton").addEventListener("click", function() {
-        const leftDiv = document.getElementById("leftDiv");
-        const rightDiv = document.getElementById("rightDiv");
-        leftDiv.classList.toggle("visible");
-        rightDiv.classList.toggle("expanded");
-    });
+        async function renderChart() {
+            const data = await fetchData();
 
-    function tabControl(chooseDiv) {
-        console.log("Tab control called with:", chooseDiv);
-        for (let i = 1; i <= 11; i++) {
-            const tab = document.getElementById(`tabOpen${i}`);
-            if (tab) {
-                if (i === chooseDiv) {
-                    tab.classList.add('active');
-                } else {
-                    tab.classList.remove('active');
-                }
-            }
-        }
-    }
-
-    function fetchDataAndUpdateCharts() {
-        fetch('path/to/your/datafile.txt')
-        .then(response => response.text())
-        .then(data => {
-            const lines = data.split('\n');
-            const temp = parseFloat(lines[0].split(':')[1].trim());
-            const humidity = parseFloat(lines[1].split(':')[1].trim());
-            const distance1 = parseFloat(lines[2].split(':')[1].trim());
-            const distance2 = parseFloat(lines[3].split(':')[1].trim());
-            const highestTemp = parseFloat(lines[4].split(':')[1].trim());
-
-            // Update data on HTML
-            document.getElementById('temptext').innerText = temp.toFixed(2);
-            document.getElementById('humiditytext').innerText = humidity.toFixed(2);
-            document.getElementById('distance1').innerText = distance1.toFixed(2);
-            document.getElementById('distance2').innerText = distance2.toFixed(2);
-            document.getElementById('highestTemp').innerText = highestTemp.toFixed(2);
-
-            // Update Charts
-            updateTempHumidityChart(temp, humidity);
-            updateDistanceChart(distance1, distance2);
-        })
-        .catch(error => console.error('Error fetching data:', error));
-    }
-
-    function updateTempHumidityChart(temp, humidity) {
-        const ctx = document.getElementById('tempHumidityChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Temperature', 'Humidity'],
-                datasets: [{
-                    label: 'Temperature & Humidity',
-                    data: [temp, humidity],
-                    borderColor: 'blue',
-                    backgroundColor: 'lightblue',
-                    fill: false
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        beginAtZero: true
-                    },
-                    y: {
-                        beginAtZero: true
+            const ctx = document.getElementById('motionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map((_, index) => index + 1),
+                    datasets: [{
+                        label: 'Motion Data',
+                        data: data,
+                        borderColor: 'green',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        fill: false,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Data Point'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Value'
+                            },
+                            beginAtZero: true
+                        }
                     }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    function updateDistanceChart(distance1, distance2) {
-        const ctx = document.getElementById('distanceChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Sensor 1', 'Sensor 2'],
-                datasets: [{
-                    label: 'Distance',
-                    data: [distance1, distance2],
-                    backgroundColor: ['red', 'green'],
-                    borderColor: ['darkred', 'darkgreen'],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        beginAtZero: true
-                    },
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    }
-
-    document.addEventListener("DOMContentLoaded", function() {
-        setInterval(fetchDataAndUpdateCharts, 1000);
-    });
-</script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</body>
-</html>
+        renderChart();
