@@ -179,341 +179,102 @@
     function tabControl(chooseDiv) {
         console.log("Tab control called with:", chooseDiv);
         for (let i = 1; i <= 11; i++) {
-            const tab = document.getElementById('tabOpen' + i);
+            const tab = document.getElementById(`tabOpen${i}`);
             if (tab) {
-                tab.classList.remove('active');
-            }
-        }
-        const selectedTab = document.getElementById('tabOpen' + chooseDiv);
-        if (selectedTab) {
-            selectedTab.classList.add('active');
-        } else {
-            console.error("Tab not found:", 'tabOpen' + chooseDiv);
-        }
-    }
-
-    let tempHumidityChart;
-    let distanceChart;
-    let temperatureUnit = 'C';
-    let highestTemperature = -Infinity; 
-    const highestTempDisplay = document.getElementById('highestTemp');
-    const intervalMinutes = 1;
-    let intervalStartTime = Date.now();
-    const iconChanger = document.getElementById('colorbuzzer');
-    const iconChanger1 = document.getElementById('colorbuzzer1');
-
-    function convertToFahrenheit(celsius) {
-        return (celsius * 9/5) + 32;
-    }
-
-    function convertToKelvin(celsius) {
-        return celsius + 273.15;
-    }
-    async function fetchData() {
-            const response = await fetch('file_motion.txt');
-            const text = await response.text();
-            return text.split('\n').map(line => parseInt(line, 10));
-        }
-    }
-    async function renderChart(){
-        const data = await fetchData();
-
-        const chartx = document.getElementById('motionChart').getContext('2d');
-        new Chart(chartx, {
-            type: 'line',
-            data: {
-                labels: data.map((_,index) => index + 1),
-                datasets: [{
-                    label: 'Motion Data',
-                    data: data,
-                    borderColor: 'green',
-                    backgroundColor: 'red',
-                    fill: false,
-                    tension: 0.1
-                }] 
-            },
-            options: { 
-                scales: {
-                    x: {
-                         title: {
-                                display: true,
-                                text: 'Data Point'
-                        }
-                    },
-                    y: {
-                       title: {
-                                display: true,
-                                text: 'Value'
-                    }
+                if (i === chooseDiv) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
                 }
             }
-        })
+        }
     }
-    renderChart();
 
     function fetchDataAndUpdateCharts() {
-        fetch('/Raspi_data')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                let tempCelsius = data.temperature;
-                let humidity = data.humidity;
-                let distance = data.distance;
-                let distance2 = data.distance2;
-                let temp;
-                
-                if (tempCelsius === null || typeof tempCelsius === 'undefined') {
-                    tempCelsius = 0; 
-                }
+        fetch('path/to/your/datafile.txt')
+        .then(response => response.text())
+        .then(data => {
+            const lines = data.split('\n');
+            const temp = parseFloat(lines[0].split(':')[1].trim());
+            const humidity = parseFloat(lines[1].split(':')[1].trim());
+            const distance1 = parseFloat(lines[2].split(':')[1].trim());
+            const distance2 = parseFloat(lines[3].split(':')[1].trim());
+            const highestTemp = parseFloat(lines[4].split(':')[1].trim());
 
-                if (humidity === null || typeof humidity === 'undefined') {
-                    humidity = 0; 
-                }
+            // Update data on HTML
+            document.getElementById('temptext').innerText = temp.toFixed(2);
+            document.getElementById('humiditytext').innerText = humidity.toFixed(2);
+            document.getElementById('distance1').innerText = distance1.toFixed(2);
+            document.getElementById('distance2').innerText = distance2.toFixed(2);
+            document.getElementById('highestTemp').innerText = highestTemp.toFixed(2);
 
-                if (distance === null || typeof distance === 'undefined') {
-                    distance = 1023; 
-                }
-
-                if (distance2 === null || typeof distance2 === 'undefined') {
-                    distance2 = 1023;
-                }
-
-                switch (temperatureUnit) {
-                    case 'C':
-                        temp = tempCelsius;
-                        iconChanger.style.backgroundColor= 'ghostwhite'
-                        break;
-                    case 'F':
-                        temp = convertToFahrenheit(tempCelsius);
-                        if(temp => 100.4){
-                            iconChanger.style.backgroundColor = 'red'
-                        }else{
-                            iconChanger.style.backgroundColor= 'ghostwhite'
-                        }
-                        break;
-                    case 'K':
-                        temp = convertToKelvin(tempCelsius);
-                        if(temp => 311.15){
-                            iconChanger.style.backgroundColor = 'red'
-                        }else{
-                            iconChanger.style.backgroundColor= 'ghostwhite'
-                        }
-                        break;
-                }
-                
-                if (!isNaN(temp) && temp > highestTemperature) {
-                    highestTemperature = temp;
-                }
-                
-                if(distance <= 6){
-                        iconChanger1.style.backgroundColor = 'red'
-                    }else{
-                        iconChanger1.style.backgroundColor= 'ghostwhite'
-                   }
-
-                
-                const now = Date.now();
-                if (temp > highestTemperature) {
-                    highestTemperature = temp;
-                }
-                if (now - intervalStartTime >= intervalMinutes * 60 * 1000) {
-
-                    highestTempDisplay.textContent = `${highestTemperature.toFixed(1)} ${temperatureUnit}`;
-                    
-                    highestTemperature = -Infinity;
-                    intervalStartTime = now;
-                }
-
-                document.getElementById('temptext').textContent = isNaN(temp) ? 'N/A' : `${temp.toFixed(2)}`;
-                document.getElementById('tempUnit').textContent = temperatureUnit;
-                document.getElementById('humiditytext').textContent = isNaN(humidity) ? 'N/A' : `${humidity.toFixed(2)}`;
-                document.getElementById('distance1').textContent = isNaN(distance) ? 'N/A' : `${distance.toFixed(2)} cm`;
-                document.getElementById('distance21').textContent = isNaN(distance2) ? 'N/A' : `${distance2.toFixed(2)} cm`;
-
-                
-                if (tempHumidityChart) {
-                    tempHumidityChart.data.datasets[0].data.push(temp);
-                    tempHumidityChart.data.datasets[1].data.push(humidity);
-
-                    const maxDataPoints = 5000;
-                    if (tempHumidityChart.data.datasets[0].data.length > maxDataPoints) {
-                        tempHumidityChart.data.datasets[0].data.shift();
-                        tempHumidityChart.data.datasets[1].data.shift();
-                    }
-
-                    tempHumidityChart.data.labels.push('');
-                    if (tempHumidityChart.data.labels.length > maxDataPoints) {
-                        tempHumidityChart.data.labels.shift();
-                    }
-
-                    tempHumidityChart.update();
-                } else {
-                    const ctxTempHumidity = document.getElementById('tempHumidityChart').getContext('2d');
-                    tempHumidityChart = new Chart(ctxTempHumidity, {
-                        type: 'line',
-                        data: {
-                            labels: [''],
-                            datasets: [
-                                {
-                                    label: `Temperature (${temperatureUnit})`,
-                                    data: [temp],
-                                    borderColor: 'red',
-                                    fill: false
-                                },
-                                {
-                                    label: 'Humidity (%)',
-                                    data: [humidity],
-                                    borderColor: 'blue',
-                                    fill: false
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
-                                    }
-                                },
-                                y: {
-                                    title: {
-                                        display: true,
-                                        text: 'Value'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-
-                if (distanceChart) {
-                    distanceChart.data.datasets[0].data.push(distance);
-                    distanceChart.data.datasets[1].data.push(distance2);
-
-                    const maxDataPoints = 5000;
-                    if (distanceChart.data.datasets[0].data.length > maxDataPoints) {
-                        distanceChart.data.datasets[0].data.shift();
-                    }
-                    if (distanceChart.data.datasets[1].data.length > maxDataPoints) {                   
-                        distanceChart.data.datasets[1].data.shift();
-                    }
-
-                    distanceChart.data.labels.push('');
-                    if (distanceChart.data.labels.length > maxDataPoints) {
-                        distanceChart.data.labels.shift();
-                    }
-
-                    distanceChart.update();
-                } else {
-                    const ctxDistance = document.getElementById('distanceChart').getContext('2d');
-                    distanceChart = new Chart(ctxDistance, {
-                        type: 'line',
-                        data: {
-                            labels: [''],
-                            datasets: [{
-                                    label: 'First Seensor (cm)',
-                                    data: [distance],
-                                    borderColor: 'black',
-                                    fill: false
-                                },
-                                {
-                                    label: 'Second Sensor (%)',
-                                    data: [distance2],
-                                    borderColor: 'orange',
-                                    fill: false
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
-                                    }
-                                },
-                                y: {
-                                    reverse: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Distance (cm)'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching the data:', error);
-            });
+            // Update Charts
+            updateTempHumidityChart(temp, humidity);
+            updateDistanceChart(distance1, distance2);
+        })
+        .catch(error => console.error('Error fetching data:', error));
     }
 
-    function toggleTemperatureUnit() {
-        switch (temperatureUnit) {
-            case 'C':
-                temperatureUnit = 'F';
-                document.getElementById('toggleUnitButton').textContent = 'Switch to Kelvin';
-                if (tempHumidityChart) {
-                    tempHumidityChart.data.labels = [];
-                    tempHumidityChart.data.datasets.forEach(dataset => {
-                        dataset.data = [];
-                    });
-                    tempHumidityChart.update();
-                    highestTemperature = -Infinity;
-                    highestTempDisplay.textContent = `${temperatureUnit}`;
+    function updateTempHumidityChart(temp, humidity) {
+        const ctx = document.getElementById('tempHumidityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Temperature', 'Humidity'],
+                datasets: [{
+                    label: 'Temperature & Humidity',
+                    data: [temp, humidity],
+                    borderColor: 'blue',
+                    backgroundColor: 'lightblue',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        beginAtZero: true
+                    },
+                    y: {
+                        beginAtZero: true
+                    }
                 }
-                
-            break;
-            case 'F':
-                temperatureUnit = 'K';
-                document.getElementById('toggleUnitButton').textContent = 'Switch to Celsius';
-                if (tempHumidityChart) {
-                    tempHumidityChart.data.labels = [];
-                    tempHumidityChart.data.datasets.forEach(dataset => {
-                        dataset.data = [];
-                    });
-                    tempHumidityChart.update();
-                    highestTemperature = -Infinity;
-                    highestTempDisplay.textContent = `${temperatureUnit}`;
-                }
-
-            break;
-            case 'K':
-                temperatureUnit = 'C';
-                document.getElementById('toggleUnitButton').textContent = 'Switch to Fahrenheit';
-                if(temp => 38){
-                    iconChanger.style.backgroundColor = 'red'
-                }else{
-                    iconChanger.style.backgroundColor= 'ghostwhite'
-                }
-                if (tempHumidityChart) {
-                    tempHumidityChart.data.labels = [];
-                    tempHumidityChart.data.datasets.forEach(dataset => {
-                        dataset.data = [];
-                    });
-                    tempHumidityChart.update();
-                    highestTemperature = -Infinity;
-                    highestTempDisplay.textContent = `${temperatureUnit}`;
-                }
-
-            break;
-        }
- 
-        fetchDataAndUpdateCharts();
+            }
+        });
     }
 
-    fetchDataAndUpdateCharts();
-    setInterval(fetchDataAndUpdateCharts, 1500);
-    document.getElementById('toggleUnitButton').addEventListener('click', toggleTemperatureUnit);
+    function updateDistanceChart(distance1, distance2) {
+        const ctx = document.getElementById('distanceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Sensor 1', 'Sensor 2'],
+                datasets: [{
+                    label: 'Distance',
+                    data: [distance1, distance2],
+                    backgroundColor: ['red', 'green'],
+                    borderColor: ['darkred', 'darkgreen'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        beginAtZero: true
+                    },
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        setInterval(fetchDataAndUpdateCharts, 1000);
+    });
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
