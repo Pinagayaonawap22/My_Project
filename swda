@@ -70,7 +70,7 @@
         }
         .act1_title {
             text-align: center;
-            font-size: 50px;
+            font-size: 30px;
         }
         .texthere {
             font-size: 25px;
@@ -104,6 +104,11 @@
             width: 50%;
             height: 450px;
             border: 1px solid;   
+        }
+        #recentImage {
+            display: none;
+            width: 100%;
+            max-width: 600px;
         }
     </style>
 </head>
@@ -166,6 +171,7 @@
                 </div>
                 <canvas id="distanceChart"></canvas>
             </div>
+
             <div id="tabOpen3" class="acttab">
                 <h1 class="act1_title">Activity 3: Motion Sensor and Rasp Camera with Webserver</h1>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
@@ -179,13 +185,37 @@
                         </div>
                     </div>
                 </div>
-                <canvas id="motionChart"></canvas>
+                <div style="display:flex; flex-direction: columns; width: 100%; border: 10px; border-color: black;">
+                    <div>
+                        <p>Captured Photo</p>
+                        <img src="/recent_image" alt="Recent Image" style="width:100%;max-width:600px;">  
+                        <button id="imagebutton"></button>
+                    </div>
+                    <div>
+                        <div style="height: 100%; width: 50%;">
+                            <canvas id="motionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
+
         </div>
         
     </div> 
 
 <script>
+        document.getElementById('imagebutton').addEventListener('click', function() {
+            var img = document.getElementById('recentImage');
+            var button = document.getElementById('toggleButton');
+
+            if (img.style.display === 'none') {
+                img.style.display = 'block';
+                button.textContent = 'Hide Recent Image';
+            } else {
+                img.style.display = 'none';
+                button.textContent = 'Show Recent Image';
+            }
+        });
         document.getElementById("toggleButton").addEventListener("click", function() {
             const leftDiv = document.getElementById("leftDiv");
             const rightDiv = document.getElementById("rightDiv");
@@ -212,10 +242,10 @@
 
         async function fetchData() {
             try {
-                const response = await fetch('/file_motion.txt'); // Ensure correct path
+                const response = await fetch('/file_motion.txt'); 
                 if (!response.ok) throw new Error('Network response was not ok');
                 const text = await response.text();
-                // Split data and remove empty lines
+                
                 return text.split('\n').map(line => parseInt(line, 10)).filter(value => !isNaN(value));
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -233,7 +263,7 @@
             const ctx = document.getElementById('motionChart').getContext('2d');
 
             if (!chart) {
-                // Create a new chart if it does not exist
+                
                 chart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -272,19 +302,18 @@
                     }
                 });
             } else {
-                // Update existing chart
+            
                 chart.data.labels = data.map((_, index) => index + 1);
                 chart.data.datasets[0].data = data;
                 chart.update();
             }
 
-            console.log('Chart updated with data:', data); // Log data for debugging
+            console.log('Chart updated with data:', data); 
         }
 
-        // Initial chart rendering
+        
         renderChart();
 
-        // Update the chart every 1000 milliseconds
         setInterval(renderChart, 1000);
 
 
