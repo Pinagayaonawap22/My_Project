@@ -86,7 +86,17 @@ def motion_detection():
 
 @app.route('/')
 def index():
-    return render_template('index1.html')
+    conz = Db_connection()
+    cursor = conz.cursor()
+    cursor.execute("SELECT image_data FROM images ORDER BY uploaded_at DESC LIMIT 1")
+    result = cursor.fetchone()
+    conz.close()
+
+    if result:
+        image_data = result[0]
+        return render_template('index.html', image_available=True)
+    else:
+        return render_template('index.html', image_available=False)
 
 @app.route('/file_motion.txt')
 def get_file_motion():
@@ -102,11 +112,9 @@ def recent_image():
     
     if result:
         image_data = result[0]
-        return Response(
-            io.BytesIO(image_data),
-            mimetype='image/jpeg'
-        )
-    return "No image found", 404
+        return send_file(io.BytesIO(image_data), mimetype='image/jpeg')
+    else:
+        return "No image available"
 
 def run_flask():
     app.run(host='0.0.0.0', port=5003, debug=True)
