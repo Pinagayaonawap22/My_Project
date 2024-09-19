@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EMBEDDED ACTIVITIES WEBSITE</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -168,38 +170,48 @@
         
     </div> 
 
-<script>
-    document.getElementById("toggleButton").addEventListener("click", function() {
-        const leftDiv = document.getElementById("leftDiv");
-        const rightDiv = document.getElementById("rightDiv");
-        leftDiv.classList.toggle("visible");
-        rightDiv.classList.toggle("expanded");
-    });
+    <script>
+        document.getElementById("toggleButton").addEventListener("click", function() {
+            const leftDiv = document.getElementById("leftDiv");
+            const rightDiv = document.getElementById("rightDiv");
+            leftDiv.classList.toggle("visible");
+            rightDiv.classList.toggle("expanded");
+        });
 
-    function tabControl(chooseDiv) {
-        console.log("Tab control called with:", chooseDiv);
-        for (let i = 1; i <= 11; i++) {
-            const tab = document.getElementById('tabOpen' + i);
-            if (tab) {
-                tab.classList.remove('active');
+        function tabControl(chooseDiv) {
+            console.log("Tab control called with:", chooseDiv);
+            for (let i = 1; i <= 11; i++) {
+                const tab = document.getElementById('tabOpen' + i);
+                if (tab) {
+                    tab.classList.remove('active');
+                }
+            }
+            const selectedTab = document.getElementById('tabOpen' + chooseDiv);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            } else {
+                console.error("Tab not found:", 'tabOpen' + chooseDiv);
             }
         }
-        const selectedTab = document.getElementById('tabOpen' + chooseDiv);
-        if (selectedTab) {
-            selectedTab.classList.add('active');
-        } else {
-            console.error("Tab not found:", 'tabOpen' + chooseDiv);
-        }
-    }
 
-    async function fetchData() {
-            const response = await fetch('file_motion.txt');
-            const text = await response.text();
-            return text.split('\n').map(line => parseInt(line, 10)).filter(value => !isNaN(value));
+        async function fetchData() {
+            try {
+                const response = await fetch('file_motion.txt');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const text = await response.text();
+                return text.split('\n').map(line => parseInt(line, 10)).filter(value => !isNaN(value));
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                return [];
+            }
         }
 
         async function renderChart() {
             const data = await fetchData();
+            if (data.length === 0) {
+                console.error('No data available to display');
+                return;
+            }
 
             const ctx = document.getElementById('motionChart').getContext('2d');
             new Chart(ctx, {
@@ -233,9 +245,7 @@
                             },
                             beginAtZero: true,
                             ticks: {
-                                stepSize: 1,
-                                max: 1,
-                                min: 0
+                                stepSize: 1
                             }
                         }
                     }
@@ -244,8 +254,6 @@
         }
 
         renderChart();
-
-</script>
-
+    </script>
 </body>
 </html>
