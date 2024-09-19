@@ -177,7 +177,7 @@
             leftDiv.classList.toggle("visible");
             rightDiv.classList.toggle("expanded");
         });
-
+    
         function tabControl(chooseDiv) {
             console.log("Tab control called with:", chooseDiv);
             for (let i = 1; i <= 11; i++) {
@@ -193,7 +193,7 @@
                 console.error("Tab not found:", 'tabOpen' + chooseDiv);
             }
         }
-
+    
         async function fetchData() {
             try {
                 const response = await fetch('file_motion.txt');
@@ -205,19 +205,19 @@
                 return [];
             }
         }
-
+    
         async function renderChart() {
             const data = await fetchData();
             if (data.length === 0) {
                 console.error('No data available to display');
                 return;
             }
-
+    
             const ctx = document.getElementById('motionChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: data.map((_, index) => index + 1), // X-axis labels as data point index
+                    labels: data.map((_, index) => index + 1), 
                     datasets: [{
                         label: 'Motion Data',
                         data: data,
@@ -252,8 +252,9 @@
                 }
             });
         }
-
+    
         renderChart();
     </script>
+    
 </body>
 </html>
