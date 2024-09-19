@@ -1,57 +1,49 @@
-import time
 import RPi.GPIO as GPIO
+import time
 from flask import Flask, render_template, jsonify
 
 app = Flask(__name__)
+# Pin setup
+pir_sensor_pin = 26  
+buzzer_pin = 20    
 
-# GPIO setup
+# Setup GPIO mode
 GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
-
-# Define GPIO pins
-buzzer_pin = 20
-pir_pin = 26
-
-# Set up GPIO pins
-GPIO.setup(buzzer_pin, GPIO.OUT)
-GPIO.setup(pir_pin, GPIO.IN)
-
-def buzzer_on():
-    GPIO.output(buzzer_pin, GPIO.HIGH)
-
-def buzzer_off():
-    GPIO.output(buzzer_pin, GPIO.LOW)
-
-def buzzer_sensor(duration):
-    GPIO.output(buzzer_pin, GPIO.HIGH)
-    time.sleep(duration)
-    GPIO.output(buzzer_pin, GPIO.LOW)
-
-def Motion_detection_Web():
-    while True:
-        if GPIO.input(pir_pin):
-            buzzer_sensor(1)
-            pirValue = True
-        else:
-            buzzer_off()
-            pirValue = False
-        time.sleep(0.1)  # Short delay to avoid rapid polling
-        return pirValue
+GPIO.setwarnings(False)  
+GPIO.setup(pir_sensor_pin, GPIO.IN)  
+GPIO.setup(buzzer_pin, GPIO.OUT)   
 
 @app.route('/')
 def index():
     return render_template('index1.html')
 
-@app.route('/Raspi_data')
-def Raspi_data():
-    MotionData = Motion_detection_Web()
-    if GPIO.input(pir_pin):
-        print("Motion detected!")
-    else:
-        print("No motion")
-    
-    return jsonify(Motion=MotionData)
+with open('file_motion.txt', 'a') as file:
+    count = 0
+    try:
+        while True:
+            if GPIO.input(pir_sensor_pin): 
+                print("Motion Detected") 
+                file.write('1\n')  # Write 1 to file
+                count += 1
+            else:
+                print("No Motion") 
+                file.write('0\n')  # Write 0 to file
+                count += 1
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5012, debug=True)
+            if count >= 100:  # Adjust the count as needed
+                file.flush()  # Ensure data is written immediately
+                count = 0  # Reset count
+
+            GPIO.output(buzzer_pin, GPIO.HIGH if GPIO.input(pir_sensor_pin) else GPIO.LOW)
+            time.sleep(1)
+
+    except KeyboardInterrupt:
+        print("Program stopped")
+
+    finally:
+        GPIO.cleanup()
+        
+    if __name__ == '__main__':
+
+    app.run(host='0.0.0.0', port=5028, debug=True)
 
