@@ -185,7 +185,7 @@
         
     </div> 
 
-    <script>
+<script>
         document.getElementById("toggleButton").addEventListener("click", function() {
             const leftDiv = document.getElementById("leftDiv");
             const rightDiv = document.getElementById("rightDiv");
@@ -208,13 +208,14 @@
                 console.error("Tab not found:", 'tabOpen' + chooseDiv);
             }
         }
-    let chart; 
+        let chart;
 
         async function fetchData() {
             try {
                 const response = await fetch('/file_motion.txt'); // Ensure correct path
                 if (!response.ok) throw new Error('Network response was not ok');
                 const text = await response.text();
+                // Split data and remove empty lines
                 return text.split('\n').map(line => parseInt(line, 10)).filter(value => !isNaN(value));
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -276,6 +277,8 @@
                 chart.data.datasets[0].data = data;
                 chart.update();
             }
+
+            console.log('Chart updated with data:', data); // Log data for debugging
         }
 
         // Initial chart rendering
@@ -284,7 +287,8 @@
         // Update the chart every 1000 milliseconds
         setInterval(renderChart, 1000);
 
-    </script>
+
+</script>
     
 </body>
 </html>
