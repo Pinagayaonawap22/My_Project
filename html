@@ -2,12 +2,12 @@ import RPi.GPIO as GPIO
 import mysql.connector
 import time
 import os
-from flask import Flask, render_template, send_from_directory, send_file
-from threading import Thread
+import cv2
+from flask import Flask, render_template, send_from_directory, send_file, Response
 import io
+from multiprocessing import Process
 
 app = Flask(__name__)
-
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
@@ -15,11 +15,12 @@ FILE_PATH = os.path.join(TEMPLATES_DIR, 'file_motion.txt')
 
 def Db_connection():
     return mysql.connector.connect(
-        host = 'localhost',
-        user = 'Embedded_act',
-        password = 'bet1234',
-        database = 'mydatabase'
+        host='localhost',
+        user='Embedded_act',
+        password='bet1234',
+        database='mydatabase'
     )
+
 pir_sensor_pin = 26  
 buzzer_pin = 20    
 
@@ -28,8 +29,19 @@ GPIO.setwarnings(False)
 GPIO.setup(pir_sensor_pin, GPIO.IN)
 GPIO.setup(buzzer_pin, GPIO.OUT)
 
-def captured_image(imagePath):
-    with open(imagePath, 'rb') as image_file:
+def capture_image():
+    cap = cv2.VideoCapture(0)
+    ret, frame = cap.read()
+    if ret:
+        image_path = 'captured_image.jpg'
+        cv2.imwrite(image_path, frame)
+        cap.release()
+        return image_path
+    cap.release()
+    return None
+
+def send_image_to_db(image_path):
+    with open(image_path, 'rb') as image_file:
         image_data = image_file.read()
 
     conz = Db_connection()
@@ -43,59 +55,67 @@ def write_data_to_file(file_path, data):
         file.write(data)
         file.flush()
 
-# Motion detection function
 def motion_detection():
     counter = 0
+    while True:
+        if GPIO.input(pir_sensor_pin): 
+            print("Motion Detected") 
+            write_data_to_file(FILE_PATH, '1\n') 
+            GPIO.output(buzzer_pin, GPIO.HIGH)   
 
-    try:
-        while True:
-            if GPIO.input(pir_sensor_pin): 
-                print("Motion Detected") 
-                write_data_to_file(FILE_PATH, '1\n') 
-                GPIO.output(buzzer_pin, GPIO.HIGH)   
+            image_path = capture_image()
+            if image_path:
+                send_image_to_db(image_path)
+                os.remove(image_path)
 
-                captured_image('path_to_your_image/motion_detected.jpg')
-            else:
-                print("No Motion") 
-                write_data_to_file(FILE_PATH, '0\n') 
-                GPIO.output(buzzer_pin, GPIO.LOW)    
+            time.sleep(10)
+        else:
+            print("No Motion") 
+            write_data_to_file(FILE_PATH, '0\n') 
+            GPIO.output(buzzer_pin, GPIO.LOW)    
 
-            counter += 1
+        counter += 1
 
-           
-            if counter >= 100:
-                counter = 0
-                print("Resetting file after 100 entries")
-                with open(FILE_PATH, 'w') as file:
-                    pass  
+        if counter >= 100:
+            counter = 0
+            print("Resetting file after 100 entries")
+            with open(FILE_PATH, 'w') as file:
+                pass  
 
-            time.sleep(1)  
+        time.sleep(1)  
 
 @app.route('/')
 def index():
     return render_template('index1.html')
 
-
 @app.route('/file_motion.txt')
 def get_file_motion():
     return send_from_directory(TEMPLATES_DIR, 'file_motion.txt')
 
+@app.route('/recent_image')
 def recent_image():
     conz = Db_connection()
     cursor = conz.cursor()
     cursor.execute("SELECT image_data FROM images ORDER BY uploaded_at DESC LIMIT 1")
-    image_data =cursor.fetchone()[0]
+    result = cursor.fetchone()
     conz.close()
-    return send_file(
-        io.BytesIO(image_data),
-        mimetype = 'image/jpg',
-        as_attachment_filename = 'recent_image.jpg'
-    )
-if __name__ == "__main__":
     
-    motion_thread = Thread(target=motion_detection)
-    motion_thread.start()
+    if result:
+        image_data = result[0]
+        return Response(
+            io.BytesIO(image_data),
+            mimetype='image/jpeg'
+        )
+    return "No image found", 404
 
-    
-    app.run(host='0.0.0.0', port=5000, debug=True)
+def run_flask():
+    app.run(host='0.0.0.0', port=5003, debug=True)
+
+if __name__ == "__main__":
+    # Start motion detection in a separate process
+    motion_process = Process(target=motion_detection)
+    motion_process.start()
+
+    # Start Flask server
+    run_flask()
 
