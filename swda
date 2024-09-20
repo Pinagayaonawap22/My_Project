@@ -3,21 +3,34 @@ import mysql.connector
 import time
 import os
 import cv2
-from http.server import HTTPServer, BaseHTTPRequestHandler
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email import encoders
+from flask import Flask, render_template, send_from_directory, send_file, Response
 import io
 from multiprocessing import Process
+
+app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 FILE_PATH = os.path.join(TEMPLATES_DIR, 'file_motion.txt')
 
 def Db_connection():
-    return mysql.connector.connect(
-        host='localhost',
-        user='Embedded_act',
-        password='bet1234',
-        database='mydatabase'
-    )
+    try:
+        connection = mysql.connector.connect(
+            host='localhost',
+            user='Embedded_act',
+            password='bet1234',
+            database='mydatabase'
+        )
+        print("Database connection successful")
+        return connection
+    except mysql.connector.Error as err:
+        print(f"Database connection error: {err}")
+        return None
 
 pir_sensor_pin = 26  
 buzzer_pin = 20    
@@ -38,19 +51,54 @@ def capture_image():
         image_path = 'captured_image.jpg'
         cv2.imwrite(image_path, frame)
         cap.release()
+        print(f"Image captured and saved at {image_path}")
         return image_path
     cap.release()
+    print("Failed to capture image")
     return None
+
+def send_test_email(image_path):
+    sender_email = "encoderactivity@gmail.com"
+    receiver_email = "pinagayaotonton@gmail.com"
+    password = "your_app_password_here"  # Use your app password here
+    
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = "Captured Image by Motion Sensor"
+
+    body = "A motion was detected, and the image is attached."
+    msg.attach(MIMEText(body, 'plain'))
+
+    with open(image_path, 'rb') as image_file:
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(image_file.read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', f'attachment; filename={os.path.basename(image_path)}')
+        msg.attach(part)
+
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, password)
+            server.send_message(msg)
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
 
 def send_image_to_db(image_path):
     with open(image_path, 'rb') as image_file:
         image_data = image_file.read()
 
     conz = Db_connection()
-    cursor = conz.cursor()
-    cursor.execute("INSERT INTO images (image_data) VALUES (%s)", (image_data,))
-    conz.commit()
-    conz.close()
+    if conz:
+        cursor = conz.cursor()
+        cursor.execute("INSERT INTO images (image_data) VALUES (%s)", (image_data,))
+        conz.commit()
+        conz.close()
+        print("Image data saved to database.")
+    else:
+        print("Failed to save image data to database due to connection error.")
 
 def write_data_to_file(file_path, data):
     with open(file_path, 'a') as file:
@@ -68,6 +116,7 @@ def motion_detection():
     global sensor_active
     last_capture_time = 0
     capture_interval = 10
+
     while True:
         if not GPIO.input(button_pin):  # Button pressed (active low)
             sensor_active = not sensor_active
@@ -84,11 +133,11 @@ def motion_detection():
                     image_path = capture_image()
                     if image_path:
                         send_image_to_db(image_path)
+                        send_test_email(image_path) 
                         os.remove(image_path)
                         last_capture_time = time_dur
 
                 time.sleep(10)
-                
             else:
                 print("No Motion") 
                 write_data_to_file(FILE_PATH, '0\n') 
@@ -107,61 +156,45 @@ def motion_detection():
 
         time.sleep(2)  
 
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == '/':
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            with open(os.path.join(TEMPLATES_DIR, 'Embedded_activity.php'), 'rb') as f:
-                self.wfile.write(f.read())
-        elif self.path == '/file_motion.txt':
-            self.send_response(200)
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-            with open(FILE_PATH, 'rb') as f:
-                self.wfile.write(f.read())
-        elif self.path == '/recent_image':
-            conz = Db_connection()
-            cursor = conz.cursor()
-            cursor.execute("SELECT image_data FROM images ORDER BY uploaded_at DESC LIMIT 1")
-            result = cursor.fetchone()
-            conz.close()
-            
-            if result:
-                image_data = result[0]
-                self.send_response(200)
-                self.send_header('Content-type', 'image/jpeg')
-                self.end_headers()
-                self.wfile.write(image_data)
-            else:
-                self.send_response(404)
-                self.wfile.write(b"No image available")
-        elif self.path == '/check_image':
-            conz = Db_connection()
-            cursor = conz.cursor()
-            cursor.execute("SELECT COUNT(*) FROM images ORDER BY uploaded_at DESC LIMIT 1")
-            result = cursor.fetchone()
-            conz.close()
+@app.route('/')
+def index():
+    return render_template('index1.html')
 
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            if result[0] > 0:
-                self.wfile.write(b'{"status": "new_image_available"}')
-            else:
-                self.wfile.write(b'{"status": "no_image"}')
-        else:
-            self.send_response(404)
-            self.wfile.write(b'Not Found')
+@app.route('/file_motion.txt')
+def get_file_motion():
+    return send_from_directory(TEMPLATES_DIR, 'file_motion.txt')
 
-def run_server():
-    server_address = ('0.0.0.0', 5012)
-    httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
-    httpd.serve_forever()
+@app.route('/recent_image')
+def recent_image():
+    conz = Db_connection()
+    cursor = conz.cursor()
+    cursor.execute("SELECT image_data FROM images ORDER BY uploaded_at DESC LIMIT 1")
+    result = cursor.fetchone()
+    conz.close()
+    
+    if result:
+        image_data = result[0]
+        return send_file(io.BytesIO(image_data), mimetype='image/jpeg')
+    else:
+        return "No image available"
+
+@app.route('/check_image')
+def check_image():
+    conz = Db_connection()
+    cursor = conz.cursor()
+    cursor.execute("SELECT COUNT(*) FROM images ORDER BY uploaded_at DESC LIMIT 1")
+    result = cursor.fetchone()
+    conz.close()
+
+    if result[0] > 0:
+        return {'status': 'new_image_available'}
+    else:
+        return {'status': 'no_image'}
+    
+def run_flask():
+    app.run(host='0.0.0.0', port=5016, debug=True)
 
 if __name__ == "__main__":
     motion_process = Process(target=motion_detection)
     motion_process.start()
-
-    run_server()
+    run_flask()
