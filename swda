@@ -3,11 +3,9 @@ import mysql.connector
 import time
 import os
 import cv2
-from flask import Flask, render_template, send_from_directory, send_file, Response
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import io
 from multiprocessing import Process
-
-app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
@@ -68,23 +66,29 @@ def push_button():
 def motion_detection():
     counter = 0
     global sensor_active
+    last_capture_time = 0
+    capture_interval = 10
     while True:
         if not GPIO.input(button_pin):  # Button pressed (active low)
             sensor_active = not sensor_active
             time.sleep(0.5)
 
         if sensor_active:
-            if GPIO.input(pir_sensor_pin): 
+            if GPIO.input(pir_sensor_pin):
+                time_dur = time.time()
                 print("Motion Detected") 
                 write_data_to_file(FILE_PATH, '1\n') 
-                GPIO.output(buzzer_pin, GPIO.HIGH)   
-
-                image_path = capture_image()
-                if image_path:
-                    send_image_to_db(image_path)
-                    os.remove(image_path)
+                GPIO.output(buzzer_pin, GPIO.HIGH)
+                
+                if time_dur - last_capture_time > capture_interval:
+                    image_path = capture_image()
+                    if image_path:
+                        send_image_to_db(image_path)
+                        os.remove(image_path)
+                        last_capture_time = time_dur
 
                 time.sleep(10)
+                
             else:
                 print("No Motion") 
                 write_data_to_file(FILE_PATH, '0\n') 
@@ -101,48 +105,63 @@ def motion_detection():
             with open(FILE_PATH, 'w') as file:
                 pass  
 
-        time.sleep(1.5)  
+        time.sleep(2)  
 
-@app.route('/')
-def index():
-    return render_template('index1.html')
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            with open(os.path.join(TEMPLATES_DIR, 'Embedded_activity.php'), 'rb') as f:
+                self.wfile.write(f.read())
+        elif self.path == '/file_motion.txt':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            with open(FILE_PATH, 'rb') as f:
+                self.wfile.write(f.read())
+        elif self.path == '/recent_image':
+            conz = Db_connection()
+            cursor = conz.cursor()
+            cursor.execute("SELECT image_data FROM images ORDER BY uploaded_at DESC LIMIT 1")
+            result = cursor.fetchone()
+            conz.close()
+            
+            if result:
+                image_data = result[0]
+                self.send_response(200)
+                self.send_header('Content-type', 'image/jpeg')
+                self.end_headers()
+                self.wfile.write(image_data)
+            else:
+                self.send_response(404)
+                self.wfile.write(b"No image available")
+        elif self.path == '/check_image':
+            conz = Db_connection()
+            cursor = conz.cursor()
+            cursor.execute("SELECT COUNT(*) FROM images ORDER BY uploaded_at DESC LIMIT 1")
+            result = cursor.fetchone()
+            conz.close()
 
-@app.route('/file_motion.txt')
-def get_file_motion():
-    return send_from_directory(TEMPLATES_DIR, 'file_motion.txt')
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            if result[0] > 0:
+                self.wfile.write(b'{"status": "new_image_available"}')
+            else:
+                self.wfile.write(b'{"status": "no_image"}')
+        else:
+            self.send_response(404)
+            self.wfile.write(b'Not Found')
 
-@app.route('/recent_image')
-def recent_image():
-    conz = Db_connection()
-    cursor = conz.cursor()
-    cursor.execute("SELECT image_data FROM images ORDER BY uploaded_at DESC LIMIT 1")
-    result = cursor.fetchone()
-    conz.close()
-    
-    if result:
-        image_data = result[0]
-        return send_file(io.BytesIO(image_data), mimetype='image/jpeg')
-    else:
-        return "No image available"
-
-@app.route('/check_image')
-def check_image():
-    conz = Db_connection()
-    cursor = conz.cursor()
-    cursor.execute("SELECT COUNT(*) FROM images ORDER BY uploaded_at DESC LIMIT 1")
-    result = cursor.fetchone()
-    conz.close()
-
-    if result[0] > 0:
-        return {'status': 'new_image_available'}
-    else:
-        return {'status': 'no_image'}
-    
-def run_flask():
-    app.run(host='0.0.0.0', port=5014, debug=True)
+def run_server():
+    server_address = ('0.0.0.0', 5012)
+    httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
+    httpd.serve_forever()
 
 if __name__ == "__main__":
     motion_process = Process(target=motion_detection)
     motion_process.start()
 
-    run_flask()
+    run_server()
