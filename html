@@ -207,10 +207,11 @@
                                 <p class="texthere">Motion Detection: <span id="PirText" class="datahere">--</span></p>
                             </div>
                             <div id="colorbuzzer1">
-                                <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
+                                <img src="https://i.imghippo.com/files/52ysZ1726880355.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
                             </div>
                         </div>
                         <canvas id="motionChart"></canvas>
+        
                     </div>
                     <div style=" display: grid; align-items: center; justify-content: center; height: 100%; width: 50%; text-align: center;">
                         <p style="font-weight: bold; font-size: 30px;">Recent Captured Photo</p>
@@ -259,11 +260,21 @@
                 const text = await response.text();
               
                 return text.split('\n').map(line => parseInt(line, 10)).filter(value => !isNaN(value));
+
+                const latestValue = data[data.length - 1]; 
+                
+                if (latestValue === 1) {
+                    document.getElementById('PirText').innerText = 'Motion detected';
+                } else {
+                    document.getElementById('PirText').innerText = 'No motion';
+                }
+                
             } catch (error) {
                 console.error('Error fetching data:', error);
                 return [];
             }
         }
+
         function fetchImage() {
             var img = document.getElementById('image');
             var container = document.getElementById('image-container');
