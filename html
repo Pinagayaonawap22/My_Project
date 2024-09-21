@@ -65,7 +65,7 @@
         #toggleButton.center {
             position: absolute;
             top: 50%;
-            left: 0.5%;
+            left: 0.9%;
             transform: translate(-50%, -50%) rotate(90deg);
         }
         .act1_title {
@@ -132,12 +132,22 @@
             padding: 10px;
             cursor: pointer; 
         }
+        .optionbutton{
+            font-family: 'Helvetica', sans-serif;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .colorbuzzer2{
+            #colorbuzzer1{
+                width: 110px;
+        }
     </style>
 </head>
 <body>
     <div id="container">
         <div id="leftDiv">
             <div class="MainContent">
+                <button class="optionbutton" onclick="tabControl(12)">Home</button>
                 <button class="optionbutton" onclick="tabControl(1)">Activity 1</button>
                 <button class="optionbutton" onclick="tabControl(2)">Activity 2</button>
                 <button class="optionbutton" onclick="tabControl(3)">Activity 3</button>
@@ -193,7 +203,7 @@
                 </div>
                 <canvas id="distanceChart"></canvas>
             </div>
-             <div id="tabOpen3" class="acttab active">
+             <div id="tabOpen3" class="acttab">
                 <h1 class="act1_title">Activity 3: Motion Sensor and Rasp Camera with Webserver</h1>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
                     <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
@@ -204,10 +214,10 @@
                     <div style="height: 100%; width: 50%;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <div style="text-align: left;">
-                                <p class="texthere">Motion Detection: <span id="PirText" class="datahere">--</span></p>
+                                <p>Sensor Status: <span id="PirText" class="texthere">...</span></p>
                             </div>
-                            <div id="colorbuzzer1">
-                                <img src="https://i.imghippo.com/files/52ysZ1726880355.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
+                            <div id="colorbuzzer2">
+                                <img src="https://i.imghippo.com/files/rkbEr1726884699.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
                             </div>
                         </div>
                         <canvas id="motionChart"></canvas>
@@ -224,11 +234,15 @@
                     </div>
                 </div>
             </div>
+            <div id="tabOpen12" class="acttab active">
+                <h3 style="text-align: center; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 100px;">BET CODER</h3>
+            </div>
         </div>
         
     </div> 
 
 <script>
+        const iconChanger = document.getElementById('colorbuzzer2');
         document.getElementById("toggleButton").addEventListener("click", function() {
             const leftDiv = document.getElementById("leftDiv");
             const rightDiv = document.getElementById("rightDiv");
@@ -238,7 +252,7 @@
     
         function tabControl(chooseDiv) {
             console.log("Tab control called with:", chooseDiv);
-            for (let i = 1; i <= 11; i++) {
+            for (let i = 1; i <= 12; i++) {
                 const tab = document.getElementById('tabOpen' + i);
                 if (tab) {
                     tab.classList.remove('active');
@@ -265,6 +279,7 @@
                 
                 if (latestValue === 1) {
                     document.getElementById('PirText').innerText = 'Motion detected';
+                    iconChanger.style.backgroundColor = 'red'
                 } else {
                     document.getElementById('PirText').innerText = 'No motion';
                 }
