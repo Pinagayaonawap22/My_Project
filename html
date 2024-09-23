@@ -1,376 +1,230 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EMBEDDED ACTIVITIES WEBSITE</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+import RPi.GPIO as GPIO
+import mysql.connector
+import time
+import os
+import cv2
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email import encoders
+from flask import Flask, render_template, send_from_directory, request, send_file, Response
+import io
+from multiprocessing import Process
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: antiquewhite;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
-        #container {
-            display: flex;
-            width: 100vw;
-            height: 100vh;
-            transition: width 0.7s ease;
-        }
-        #leftDiv {
-            display: grid;
-            background-color: #B99470;
-            width: 0%;
-            height: 100%;
-            position: relative;
-            gap: 2px;
-            transition: width 0.5s ease;
-        }
-        .MainContent {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            grid-gap: 10px;
-            justify-content: center;
-            align-items: center;
-            height: 99%;
-            padding: 10px;
-        }
-        #leftDiv.visible {
-            width: 10%;
-        }
-        #rightDiv {
-            display: flex;
-            background-color: #FEFAE0;
-            width: 100%;
-            height: 100%;
-            position: relative;
-            gap: 30px;
-        }
-        #rightDiv.expanded {
-            width: 90%;
-        }
-        button {
-            background-color: white;
-            padding: 10px;
-            cursor: pointer;
-            transition: all 0.5s ease;
-        }
-        #toggleButton.center {
-            position: absolute;
-            top: 50%;
-            left: 0.9%;
-            transform: translate(-50%, -50%) rotate(90deg);
-        }
-        .act1_title {
-            text-align: center;
-            font-size: 50px;
-        }
-        .texthere {
-            font-size: 25px;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-        #tempHumidityChart, #distanceChart {
-            width: 100%;
-            height: 450px;
-            border: 1px solid;
-        }
-        .acttab {
-            display: none;
-        }
-        .acttab.active {
-            display: block;
-            text-align: center;
-            position: relative;
-            width: 100%;
-        }
-        #tempHumidityChart {
-            width: 95%;
-            height: 450px;
-            border: 1px solid;       
-        } 
-        #distanceChart {
-            width: 95%;
-            height: 450px;
-            border: 1px solid; 
-        }
-        #motionChart{
-            width: 50%;
-            height: 450px;
-            border: 1px solid;   
-        }
-        #image-container {
-            width: 300px;
-            height: 300px;
-            background-color: black;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-        #image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none; /* Initially hide the image */
-        }
-        .fetchbutton{
-            justify-content: center;
-            align-items: center;
-            font-family: 'Roboto', sans-serif;
-            font-size: 16px;
-            font-weight: bold;
-            height: 50px;
-            width: 250px;
-            background-color: white;
-            padding: 10px;
-            cursor: pointer; 
-        }
-        .optionbutton{
-            font-family: 'Helvetica', sans-serif;
-            font-weight: bold;
-            font-size: 15px;
-        }
-        .colorbuzzer2{
-            #colorbuzzer1{
-                width: 110px;
-        }
-    </style>
-</head>
-<body>
-    <div id="container">
-        <div id="leftDiv">
-            <div class="MainContent">
-                <button class="optionbutton" onclick="tabControl(12)">Home</button>
-                <button class="optionbutton" onclick="tabControl(1)">Activity 1</button>
-                <button class="optionbutton" onclick="tabControl(2)">Activity 2</button>
-                <button class="optionbutton" onclick="tabControl(3)">Activity 3</button>
-                <button class="optionbutton" onclick="tabControl(4)">Activity 4</button>
-                <button class="optionbutton" onclick="tabControl(5)">Activity 5</button>
-                <button class="optionbutton" onclick="tabControl(6)">Activity 6</button>
-                <button class="optionbutton" onclick="tabControl(7)">Activity 7</button>
-                <button class="optionbutton" onclick="tabControl(8)">Activity 8</button>
-                <button class="optionbutton" onclick="tabControl(9)">Activity 9</button>
-                <button class="optionbutton" onclick="tabControl(10)">Activity 10</button>
-                <button class="optionbutton" onclick="tabControl(11)">Members</button>
-            </div>
-        </div>
-        <div id="rightDiv">
-            <div>
-                <button id="toggleButton" class="center" style="border: none; background-color: #B99470; color: black; font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">
-                    Main Content
-                </button>
-            </div>
-            <div id="tabOpen1" class="acttab ">
-                <h1 class="act1_title">Activity 1: Temperature & Humidity sensor with Webserver</h1>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
-                    <div style="text-align: left;">
-                        <p class="texthere">Temperature: <span id="temptext" class="datahere">--</span> <span id="tempUnit" class="datahere">C</span></p>
-                        <p class="texthere">Humidity: <span id="humiditytext" class="datahere">--</span> %</p>
-                        <p class="texthere">Highest Temperature: <span id="highestTemp" class="datahere">--</span> <span id="tempUnit" class="datahere"></span></p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                        <p style="margin: 0;">Buzzer Status:</p>
-                        <div id="colorbuzzer">
-                            <img src="https://i.imghippo.com/files/6fNBA1725347941.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
-                        </div>
-                    </div>
-                </div>
-                <canvas id="tempHumidityChart"></canvas>
-                <div class="ChartPart">
-                    <button id="toggleUnitButton" class="buttonstyle">Switch to Fahrenheit</button>
-                </div>
-            </div>
-            <div id="tabOpen2" class="acttab">
-                <h1 class="act1_title">Activity 2: Distance Sensor with Webserver</h1>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
-                    <div style="text-align: left;">
-                        <p class="texthere">First sensor: <span id="distance1" class="datahere">--</span> cm</p>
-                        <p class="texthere">Second sensor: <span id="distance2" class="datahere">--</span> cm</p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                        <p style="margin: 0;">Buzzer Status:</p>
-                        <div id="colorbuzzer1">
-                            <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
-                        </div>
-                    </div>
-                </div>
-                <canvas id="distanceChart"></canvas>
-            </div>
-             <div id="tabOpen3" class="acttab">
-                <h1 class="act1_title">Activity 3: Motion Sensor and Rasp Camera with Webserver</h1>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
-                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
-                        <p style="margin: 0;">Buzzer Status:</p>
-                    </div>
-                </div>
-                <div style="justify-items: center; align-items: center; position: relative; display: flex; width: 100%; height: 65%;">  
-                    <div style="height: 100%; width: 50%;">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div style="text-align: left;">
-                                <p>Sensor Status: <span id="PirText" class="texthere">...</span></p>
-                            </div>
-                            <div id="colorbuzzer2">
-                                <img src="https://i.imghippo.com/files/rkbEr1726884699.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
-                            </div>
-                        </div>
-                        <canvas id="motionChart"></canvas>
-        
-                    </div>
-                    <div style=" display: grid; align-items: center; justify-content: center; height: 100%; width: 50%; text-align: center;">
-                        <p style="font-weight: bold; font-size: 30px;">Recent Captured Photo</p>
-                        <div id="image-container">
-                            <img id="image" src="" alt="Recent Image">
-                        </div>
-                        <div style="align-items: center;">
-                            <button onclick="fetchImage()" class="fetchbutton">Show Captured Image</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div id="tabOpen12" class="acttab active">
-                <h3 style="text-align: center; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 100px;">BET CODER</h3>
-            </div>
-        </div>
-        
-    </div> 
+app = Flask(__name__)
 
-<script>
-        const iconChanger = document.getElementById('colorbuzzer2');
-        document.getElementById("toggleButton").addEventListener("click", function() {
-            const leftDiv = document.getElementById("leftDiv");
-            const rightDiv = document.getElementById("rightDiv");
-            leftDiv.classList.toggle("visible");
-            rightDiv.classList.toggle("expanded");
-        });
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
+FILE_PATH = os.path.join(TEMPLATES_DIR, 'file_motion.txt')
+
+def Db_connection():
+    try:
+        connection = mysql.connector.connect(
+            host='localhost',
+            user='Embedded_act',
+            password='bet1234',
+            database='mydatabase'
+        )
+        print("Database connection successful")
+        return connection
+    except mysql.connector.Error as err:
+        print(f"Database connection error: {err}")
+        return None
+
+pir_sensor_pin = 26  
+buzzer_pin = 20    
+button_pin = 16
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.setup(pir_sensor_pin, GPIO.IN)
+GPIO.setup(buzzer_pin, GPIO.OUT)
+GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Pull-up resistor
+
+sensor_active = True
+
+def capture_image():
+    cap = cv2.VideoCapture(0)
+    ret, frame = cap.read()
+    if ret:
+        image_path = 'captured_image.jpg'
+        cv2.imwrite(image_path, frame)
+        cap.release()
+        print(f"Image captured and saved at {image_path}")
+        return image_path
+    cap.release()
+    print("Failed to capture image")
+    return None
+
+def send_test_email(image_path):
+    sender_email = "encoderactivity@gmail.com"
+    receiver_email = "pinagayaotonton@gmail.com"
+    password = "wfaf mumd yskg xwvx"  # Use your app password here
     
-        function tabControl(chooseDiv) {
-            console.log("Tab control called with:", chooseDiv);
-            for (let i = 1; i <= 12; i++) {
-                const tab = document.getElementById('tabOpen' + i);
-                if (tab) {
-                    tab.classList.remove('active');
-                }
-            }
-            const selectedTab = document.getElementById('tabOpen' + chooseDiv);
-            if (selectedTab) {
-                selectedTab.classList.add('active');
-            } else {
-                console.error("Tab not found:", 'tabOpen' + chooseDiv);
-            }
-        }
-        let chart;
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = "Captured Image by Motion Sensor"
 
-        async function fetchData() {
-            try {
-                const response = await fetch('/file_motion.txt'); 
-                if (!response.ok) throw new Error('Network response was not ok');
-                const text = await response.text();
-              
-                return text.split('\n').map(line => parseInt(line, 10)).filter(value => !isNaN(value));
+    body = "A motion was detected, and the image is attached."
+    msg.attach(MIMEText(body, 'plain'))
 
-                const latestValue = data[data.length - 1]; 
+    with open(image_path, 'rb') as image_file:
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(image_file.read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', f'attachment; filename={os.path.basename(image_path)}')
+        msg.attach(part)
+
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, password)
+            server.send_message(msg)
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+def send_image_to_db(image_path):
+    with open(image_path, 'rb') as image_file:
+        image_data = image_file.read()
+
+    conz = Db_connection()
+    if conz:
+        cursor = conz.cursor()
+        cursor.execute("INSERT INTO images (image_data) VALUES (%s)", (image_data,))
+        conz.commit()
+        conz.close()
+        print("Image data saved to database.")
+    else:
+        print("Failed to save image data to database due to connection error.")
+
+def write_data_to_file(file_path, data):
+    with open(file_path, 'a') as file:
+        file.write(data)
+        file.flush()
+        
+@app.route('/push_button', methods=['POST'])
+def push_button():
+    global sensor_active
+    sensor_active = not sensor_active
+    state = "active" if sensor_active else "inactive"
+    print(f"Sensor state changed: {state}")  # Log the state change
+    return {'status': state}
+
+def motion_detection():
+    counter = 0
+    global sensor_active
+    last_capture_time = 0
+    capture_interval = 10
+
+    while True:
+        if not GPIO.input(button_pin):  # Button pressed (active low)
+            sensor_active = not sensor_active
+            time.sleep(0.5)
+
+        if sensor_active:
+            if GPIO.input(pir_sensor_pin):
+                time_dur = time.time()
+                print("Motion Detected") 
+                write_data_to_file(FILE_PATH, '1\n') 
+                GPIO.output(buzzer_pin, GPIO.HIGH)
                 
-                if (latestValue === 1) {
-                    document.getElementById('PirText').innerText = 'Motion detected';
-                    iconChanger.style.backgroundColor = 'red'
-                } else {
-                    document.getElementById('PirText').innerText = 'No motion';
-                }
-                
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                return [];
-            }
-        }
+                if time_dur - last_capture_time > capture_interval:
+                    image_path = capture_image()
+                    if image_path:
+                        send_image_to_db(image_path)
+                        send_test_email(image_path) 
+                        os.remove(image_path)
+                        last_capture_time = time_dur
 
-        function fetchImage() {
-            var img = document.getElementById('image');
-            var container = document.getElementById('image-container');
+                time.sleep(10)
+            else:
+                print("No Motion") 
+                write_data_to_file(FILE_PATH, '0\n') 
+                GPIO.output(buzzer_pin, GPIO.LOW)    
+        else:
+            print("Sensor is inactive")
+            time.sleep(1)
 
-            fetch('/recent_image')
-                .then(response => {
-                    if (response.ok) {
-                        img.src = '/recent_image'; 
-                        img.style.display = 'block'; 
-                    } else {
-                        container.style.backgroundColor = 'black'; 
-                        console.log("No image available");
-                    }
-                })
-                .catch(error => console.error('Error fetching image:', error));
-        }
+        counter += 1
 
-        async function renderChart() {
-            const data =await fetchData();
-            if (data.length === 0) {
-                console.error('No data available to display');
-                return;
-            }
+        if counter >= 100:
+            counter = 0
+            print("Resetting file after 100 entries")
+            with open(FILE_PATH, 'w') as file:
+                pass  
 
-            const ctx = document.getElementById('motionChart').getContext('2d');
+        time.sleep(5)  
 
-            if (!chart) {
-                
-                chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: data.map((_, index) => index + 1),
-                        datasets: [{
-                            label: 'Motion Data',
-                            data: data,
-                            borderColor: 'green',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            fill: false,
-                            tension: 0.1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Data Point'
-                                },
-                                ticks: {
-                                    stepSize: 1
-                                }
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: 'Value'
-                                },
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1
-                                }
-                            }
-                        }
-                    }
-                });
-            } else {
-                chart.data.labels = data.map((_, index) => index + 1);
-                chart.data.datasets[0].data = data;
-                chart.update();
-            }
+@app.route('/')
+def index():
+    return render_template('index1.html')
 
-            console.log('Chart updated with data:', data);
-        }
+@app.route('/gallery')
+def gallery():
+    conz = Db_connection()
+    cursor = conz.cursor()
+    cursor.execute("SELECT image_data FROM images WHERE id IN (1, 2, 3, 4, 5)")
+    results = cursor.fetchall()
+    conz.close()
 
-       
-        renderChart();
+    images = []
+    for result in results:
+        images.append(f"data:image/jpeg;base64,{base64.b64encode(result[0]).decode('utf-8')}")
 
-        setInterval(renderChart, 1000);
+    # Ensure we have exactly 5 images, filling with None if less than 5
+    while len(images) < 5:
+        images.append(None)
 
+    return render_template('index1.html', images=images)
 
-</script>
+@app.route('/capture_image', methods=['POST'])
+def capture_image_route():
+    image_path = capture_image()
+    if image_path:
+        send_image_to_db(image_path)
+        send_test_email(image_path)
+        os.remove(image_path)
+        return {'status': 'image_captured'}
+    return {'status': 'capture_failed'}
+
+@app.route('/file_motion.txt')
+def get_file_motion():
+    return send_from_directory(TEMPLATES_DIR, 'file_motion.txt')
+
+@app.route('/recent_image')
+def recent_image():
+    conz = Db_connection()
+    cursor = conz.cursor()
+    cursor.execute("SELECT image_data FROM images ORDER BY uploaded_at DESC LIMIT 1")
+    result = cursor.fetchone()
+    conz.close()
     
-</body>
-</html>
+    if result:
+        image_data = result[0]
+        return send_file(io.BytesIO(image_data), mimetype='image/jpeg')
+    else:
+        return "No image available"
+
+@app.route('/check_image')
+def check_image():
+    conz = Db_connection()
+    cursor = conz.cursor()
+    cursor.execute("SELECT COUNT(*) FROM images ORDER BY uploaded_at DESC LIMIT 1")
+    result = cursor.fetchone()
+    conz.close()
+
+    if result[0] > 0:
+        return {'status': 'new_image_available'}
+    else:
+        return {'status': 'no_image'}
+
+def run_flask():
+    app.run(host='0.0.0.0', port=5066, debug=True)
+
+if __name__ == "__main__":
+    motion_process = Process(target=motion_detection)
+    motion_process.start()
+    run_flask()
