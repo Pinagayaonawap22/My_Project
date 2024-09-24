@@ -1,6 +1,176 @@
-(env) pi@raspberrypi:~/activities $ python count.py
-Traceback (most recent call last):
-  File "/home/pi/activities/count.py", line 35, in <module>
-    cursor.execute('PRAGMA journal_mode=WAL')  # Enable WAL mode for concurrent access
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-sqlite3.OperationalError: database is locked
+import RPi.GPIO as GPIO
+import time
+import serial
+import sqlite3
+from datetime import datetime
+from luma.core.interface.serial import spi
+from luma.oled.device import ssd1306
+from luma.core.render import canvas
+
+# OLED Display Initialization
+spi_serial = spi(device=0, port=0)
+oled = ssd1306(spi_serial, rotate=2)
+oled.command(0xA0)
+oled.command(0xC8)
+
+# GPIO Setup
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+
+Vibration_pin = 16
+buzzer_pin = 15
+status_button = 23
+sensorstatus = 0
+smokestatus = 0
+Vibrationstatus = 0
+
+GPIO.setup(Vibration_pin, GPIO.IN)
+GPIO.setup(buzzer_pin, GPIO.OUT)
+GPIO.setup(status_button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+last_button_state = GPIO.input(status_button)
+
+# Database path
+db_path = 'mydatabase.db'
+
+# Function to connect to the database
+def connect_db():
+    return sqlite3.connect(db_path, timeout=10)
+
+# Function to enable WAL mode for the database
+def enable_wal_mode():
+    try:
+        with connect_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute('PRAGMA journal_mode=WAL')  # Enable WAL mode for better concurrency
+            conn.commit()
+            print("WAL mode enabled.")
+    except sqlite3.OperationalError as e:
+        print(f"Error enabling WAL mode: {e}")
+        exit()
+
+# Function to insert data with retries
+def insert_data_with_retries(data, retries=5, delay=2):
+    for attempt in range(retries):
+        try:
+            with connect_db() as dbconn:
+                cursor = dbconn.cursor()
+                cursor.execute('''INSERT INTO my_table (smoke, vibration, smoke_buzzer, vibration_buzzer, time)
+                                  VALUES (?, ?, ?, ?, ?)''', data)
+                dbconn.commit()
+                print("Data written to database.")
+                return  # Exit if successful
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e):
+                print(f"Database is locked, retrying... (Attempt {attempt + 1})")
+                time.sleep(delay)  # Wait before retrying
+            else:
+                print(f"Error inserting data: {e}")
+                break
+
+# Function to control the buzzer
+def buzzer_on():
+    GPIO.output(buzzer_pin, GPIO.HIGH)
+
+def buzzer_off():
+    GPIO.output(buzzer_pin, GPIO.LOW)
+
+def buzzer_time(duration):
+    GPIO.output(buzzer_pin, GPIO.HIGH)
+    time.sleep(duration)
+    GPIO.output(buzzer_pin, GPIO.LOW)
+
+# Attempt to connect to the Arduino
+try:
+    arduino = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+    arduino.flush()
+except serial.SerialException as e:
+    print(f"Error Opening port: {e}")
+    exit()
+
+# Smoke sensor logic
+def SmokeSensor():
+    global smokestatus
+    if smokestatus == 1:
+        if arduino.in_waiting > 0:
+            line = arduino.readline().decode('utf-8').rstrip()
+            if int(line) > 85:
+                buzzer_time(2)
+            else:
+                buzzer_off()
+            return line
+        else:
+            return "No data from Arduino"
+    else:
+        return "offline"
+
+# Vibration sensor logic
+def VibrationSensor():
+    global Vibrationstatus
+    if Vibrationstatus == 1:
+        if GPIO.input(Vibration_pin):
+            buzzer_time(2)
+            return "1"
+        else:
+            buzzer_off()
+            return "0"
+    else:
+        return "offline"
+
+# Function to display sensor data on OLED
+def display_text(smoke_value, vibration_status):
+    try:
+        with canvas(oled) as draw:
+            draw.text((10, 10), f"Smoke: {smoke_value} ppm", fill="blue")
+            draw.text((10, 30), f"Vibration: {vibration_status} g", fill="blue")
+    except Exception as e:
+        print(f"Error displaying text: {e}")
+
+# Enable WAL mode for concurrent access
+enable_wal_mode()
+
+# Main loop
+try:
+    while True:
+        current_button_state = GPIO.input(status_button)
+        if last_button_state == GPIO.HIGH and current_button_state == GPIO.LOW:
+            sensorstatus = 1 if sensorstatus == 0 else 0
+            smokestatus = sensorstatus
+            Vibrationstatus = sensorstatus
+            time.sleep(0.2)
+
+        last_button_state = current_button_state
+
+        # Get sensor readings
+        smoke_value = SmokeSensor()
+        vibration_status = VibrationSensor()
+
+        # Display readings on OLED
+        display_text(smoke_value, vibration_status)
+
+        print(f"Smoke: {smoke_value}")
+        print(f"Vibration: {vibration_status}")
+
+        if sensorstatus == 1:
+            if int(smoke_value) > 85:
+                buzzerstatus = "Active"
+            else:
+                buzzerstatus = "Inactive"
+
+            if vibration_status == "1":
+                buzzerstatus1 = "Active"
+            else:
+                buzzerstatus1 = "Inactive"
+
+            currenTime = datetime.now()
+            data = (smoke_value, vibration_status, buzzerstatus, buzzerstatus1, currenTime)
+
+            # Insert data into the database with retry logic
+            insert_data_with_retries(data)
+
+        time.sleep(2)
+
+except KeyboardInterrupt:
+    print("Program stopped by User")
+
+finally:
+    GPIO.cleanup()
