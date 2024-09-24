@@ -8,9 +8,13 @@ from luma.oled.device import ssd1306
 from luma.core.render import canvas
 from datetime import datetime
 from multiprocessing import Process
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 
 app = Flask(__name__)
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
+FILE_PATH = os.path.join(TEMPLATES_DIR, 'file_motion.txt')
 
 spi_serial = spi(device=0, port=0)
 oled = ssd1306(spi_serial, rotate=2)
@@ -63,6 +67,11 @@ def reset_table():
         finally:
             cursor.close()
             connection.close()
+
+def write_data_to_file(file_path, data):
+    with open(file_path, 'a') as file:
+        file.write(data)
+        file.flush()
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
@@ -140,6 +149,7 @@ def display_text(smoke_value, vibration_status):
 # Counter for inserted data
 data_count = 0
 
+
 def disasteract():
     global data_count, last_button_state
     try:
@@ -159,12 +169,11 @@ def disasteract():
             vibration_status = VibrationSensor() 
             display_text(smoke_value, vibration_status)
 
-            # Handle smoke_value conversion safely
             try:
                 smoke_value_int = int(smoke_value)
                 smokebuzzer = "Active" if smoke_value_int > 85 else "Inactive"
             except ValueError:
-                smokebuzzer = "Inactive"  # Default if smoke_value isn't valid
+                smokebuzzer = "Inactive" 
 
             vibrationbuzzer = "Active" if vibration_status == "1" else "Inactive"
 
@@ -172,14 +181,24 @@ def disasteract():
             print(f"Vibration Status: {vibration_status}") 
 
             current_time = datetime.now()
-
-            insert_data_into_db(smoke_value, vibration_status, smokebuzzer, vibrationbuzzer, current_time)
+            if sensorstatus == 1:
+                insert_data_into_db(smoke_value, vibration_status, smokebuzzer, vibrationbuzzer, current_time)
+                
+                write_data_to_file(FILE_PATH, '{smoke_value},{vibration_status}\n') 
 
             data_count += 1
 
             if data_count >= 100:
                 reset_table()
                 data_count = 0 
+            
+            counter += 1
+
+            if counter >= 100:
+                counter = 0
+                print("Resetting file after 100 entries")
+                with open(FILE_PATH, 'w') as file:
+                    pass 
 
             time.sleep(1)
 
@@ -194,7 +213,7 @@ def index():
     return render_template('index1.html')
 
 def run_flask():
-    app.run(host='0.0.0.0', port=5066, debug=True)
+    app.run(host='0.0.0.0', port=5067, debug=True)
 
 if __name__ == "__main__":
     disaster = Process(target=disasteract)
