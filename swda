@@ -6,7 +6,7 @@ import serial
 from luma.core.interface.serial import spi
 from luma.oled.device import ssd1306
 from luma.core.render import canvas
-from datetime import datetime 
+from datetime import datetime
 from multiprocessing import Process
 from flask import Flask, render_template
 
@@ -70,9 +70,9 @@ GPIO.setwarnings(False)
 Vibration_pin = 16
 buzzer_pin = 27
 status_button = 23
-sensorstatus = 0  
-smokestatus = 0   
-Vibrationstatus = 0  
+sensorstatus = 0
+smokestatus = 0
+Vibrationstatus = 0
 
 GPIO.setup(Vibration_pin, GPIO.IN)
 GPIO.setup(buzzer_pin, GPIO.OUT)
@@ -107,9 +107,9 @@ def SmokeSensor():
                 buzzer_time(3)
             else:
                 buzzer_off()
-            return line 
+            return line
         else:
-            return "No data from Arduino" 
+            return "No data from Arduino"
     else:
         return "Smoke sensor is off"
 
@@ -117,18 +117,18 @@ def VibrationSensor():
     global Vibrationstatus
     if Vibrationstatus == 1:
         if GPIO.input(Vibration_pin):
-            buzzer_time(2)  
-            return "1" 
+            buzzer_time(2)
+            return "1"
         else:
             buzzer_off()
-            return "0" 
+            return "0"
     else:
         return "Vibration sensor is off"
 
 def display_text(smoke_value, vibration_status):
     try:
         with canvas(oled) as draw:
-            formatted_smoke = f"{smoke_value}"  # Ensure this is string compatible
+            formatted_smoke = f"{smoke_value}"
             formatted_vibration = f"{vibration_status}"
 
             draw.text((10, 10), f"Smoke: {formatted_smoke} ppm", fill="blue")
@@ -137,6 +137,7 @@ def display_text(smoke_value, vibration_status):
     except Exception as e:
         print(f"Error displaying text: {e}")
 
+# Counter for inserted data
 data_count = 0
 
 def disasteract():
@@ -150,7 +151,7 @@ def disasteract():
                 sensorstatus = 1 if sensorstatus == 0 else 0  
                 smokestatus = sensorstatus  
                 Vibrationstatus = sensorstatus 
-                time.sleep(0.2) 
+                time.sleep(0.2)
 
             last_button_state = current_button_state 
             
@@ -158,11 +159,17 @@ def disasteract():
             vibration_status = VibrationSensor() 
             display_text(smoke_value, vibration_status)
 
-            smokebuzzer = "Active" if int(smoke_value) > 85 else "Inactive"
+            # Handle smoke_value conversion safely
+            try:
+                smoke_value_int = int(smoke_value)
+                smokebuzzer = "Active" if smoke_value_int > 85 else "Inactive"
+            except ValueError:
+                smokebuzzer = "Inactive"  # Default if smoke_value isn't valid
+
             vibrationbuzzer = "Active" if vibration_status == "1" else "Inactive"
 
-            print(f"{smoke_value}") 
-            print(f"{vibration_status}") 
+            print(f"Smoke Value: {smoke_value}") 
+            print(f"Vibration Status: {vibration_status}") 
 
             current_time = datetime.now()
 
@@ -174,7 +181,7 @@ def disasteract():
                 reset_table()
                 data_count = 0 
 
-            time.sleep(1) 
+            time.sleep(1)
 
     except KeyboardInterrupt:
         print("Program stopped by User")
