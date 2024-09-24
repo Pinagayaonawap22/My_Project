@@ -8,16 +8,15 @@ from luma.oled.device import ssd1306
 from luma.core.render import canvas
 from PIL import ImageOps
 
-
+# Setup OLED display
 spi_serial = spi(device=0, port=0)
 oled = ssd1306(spi_serial, rotate=2)
 oled.command(0xA0)
 oled.command(0xC8)
 
-
+# Setup GPIO pins
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
-
 Vibration_pin = 16
 buzzer_pin = 15
 status_button = 23
@@ -25,15 +24,28 @@ sensorstatus = 0
 smokestatus = 0   
 Vibrationstatus = 0  
 
-
 GPIO.setup(Vibration_pin, GPIO.IN)
 GPIO.setup(buzzer_pin, GPIO.OUT)
 GPIO.setup(status_button, GPIO.IN, pull_up_down=GPIO.PUD_UP) 
 last_button_state = GPIO.input(status_button)
 
-dbconn = sqlite3.connect('mydatabase.db')
+# Connect to SQLite database with Write-Ahead Logging (WAL) mode
+dbconn = sqlite3.connect('mydatabase.db', timeout=5)
 cursor = dbconn.cursor()
+cursor.execute('PRAGMA journal_mode=WAL')  # Enable WAL mode for concurrent access
 
+# Create table if it doesn't exist
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS my_table (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    smoke TEXT,
+    vibration TEXT,
+    smoke_buzzer TEXT,
+    vibration_buzzer TEXT,
+    time DATETIME
+)
+''')
+dbconn.commit()
 
 def buzzer_on():
     GPIO.output(buzzer_pin, GPIO.HIGH)
@@ -46,7 +58,7 @@ def buzzer_time(duration):
     time.sleep(duration)
     GPIO.output(buzzer_pin, GPIO.LOW)
 
-# Attempt to connect to the Arduino
+# Attempt to connect to Arduino
 try:
     arduino = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
     arduino.flush()
@@ -59,12 +71,10 @@ def SmokeSensor():
     if smokestatus == 1:
         if arduino.in_waiting > 0:
             line = arduino.readline().decode('utf-8').rstrip()
-
-            if line > 85:
+            if int(line) > 85:
                 buzzer_time(2)
             else:
-                buzzer_off
-
+                buzzer_off()
             return line 
         else:
             return "No data from Arduino" 
@@ -86,60 +96,56 @@ def VibrationSensor():
 def display_text(smoke_value, vibration_status):
     try:
         with canvas(oled) as draw:
-            formatted_smoke = f"{smoke_value}"  # Ensure this is string compatible
-            formatted_vibration = f"{vibration_status}"
-
-            draw.text((10, 10), f"Smoke: {formatted_smoke} ppm", fill="blue")
-            draw.text((10, 30), f"Vibration: {formatted_vibration} g", fill="blue")
-
+            draw.text((10, 10), f"Smoke: {smoke_value} ppm", fill="blue")
+            draw.text((10, 30), f"Vibration: {vibration_status} g", fill="blue")
     except Exception as e:
         print(f"Error displaying text: {e}")
 
 databasereset = 0
+
 try:
     while True:
+        # Handle button press
         current_button_state = GPIO.input(status_button)
-
         if last_button_state == GPIO.HIGH and current_button_state == GPIO.LOW:
             sensorstatus = 1 if sensorstatus == 0 else 0  
             smokestatus = sensorstatus  
             Vibrationstatus = sensorstatus 
-            time.sleep(0.2) 
+            time.sleep(0.2)  # Debounce delay
+        last_button_state = current_button_state
 
-        last_button_state = current_button_state 
-        
+        # Read sensors
         smoke_value = SmokeSensor()  
         vibration_status = VibrationSensor() 
         display_text(smoke_value, vibration_status)
 
-        print(f"{smoke_value}") 
-        print(f"{vibration_status}")
+        # Print values to console
+        print(f"Smoke: {smoke_value}, Vibration: {vibration_status}")
 
         if sensorstatus == 1:
-            if smoke_value > 85:
-                buzzerstatus ="Active"
-            else:
-                buzzerstatus ="Inactive"
+            buzzerstatus = "Active" if int(smoke_value) > 85 else "Inactive"
+            buzzerstatus1 = "Active" if vibration_status == "1" else "Inactive"
 
-            if vibration_status == 1:
-                buzzerstatus1 ="Active"
-            else:
-                buzzerstatus1 ="Inactive"
+            currenTime = datetime.now()
 
-            currenTime =datetime.now()
-            cursor.execute('''
-                INSERT INTO SensorData (smoke, vibration, smoke_buzzer, vibration_buzzer, time)
-                VALUES (?, ?, ?, ?, ?)
-            ''',(smoke_value, vibration_status, buzzerstatus, buzzerstatus1, currenTime)) 
-            
-            databasereset +=1
+            # Retry database write if locked
+            for attempt in range(5):  # Retry up to 5 times
+                try:
+                    with dbconn:  # Using a context manager for the transaction
+                        cursor.execute('''INSERT INTO my_table (smoke, vibration, smoke_buzzer, vibration_buzzer, time)
+                                          VALUES (?, ?, ?, ?, ?)''', 
+                                       (smoke_value, vibration_status, buzzerstatus, buzzerstatus1, currenTime))
+                    print("Data written to database.")
+                    break  # Exit loop if successful
+                except sqlite3.OperationalError as e:
+                    if "database is locked" in str(e):
+                        print("Database is locked, retrying...")
+                        time.sleep(1)  # Wait before retrying
+                    else:
+                        print(f"Error inserting data: {e}")
+                        break
 
-            if databasereset >= 150:
-                cursor.execute('DELETE FROM my_table')
-                dbconn.commit()
-                databasereset = 0
-
-        time.sleep(2) 
+        time.sleep(2)  # Loop delay
 
 except KeyboardInterrupt:
     print("Program stopped by User")
