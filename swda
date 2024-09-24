@@ -8,8 +8,8 @@ from luma.oled.device import ssd1306
 from luma.core.render import canvas
 from datetime import datetime 
 from multiprocessing import Process
-from flask import Flask, render_template, send_from_directory, request, send_file, Response
-
+from flask import Flask, render_template, request
+from flask import send_from_directory, send_file, Response
 
 app = Flask(__name__)
 
@@ -32,13 +32,11 @@ def Db_connection():
         print(f"Database connection error: {err}")
         return None
 
-# Update function to include new parameters
 def insert_data_into_db(smoke_value, vibration_status, smokebuzzer, vibrationbuzzer, timestamp):
     connection = Db_connection()
     if connection:
         try:
             cursor = connection.cursor()
-            # Prepare the SQL query with additional fields
             sql_query = """
                 INSERT INTO sensor_data (smoke_value, vibration_status, smoke_buzzer, vibration_buzzer, time)
                 VALUES (%s, %s, %s, %s, %s)
@@ -52,13 +50,11 @@ def insert_data_into_db(smoke_value, vibration_status, smokebuzzer, vibrationbuz
             cursor.close()
             connection.close()
 
-# New function to reset the table
 def reset_table():
     connection = Db_connection()
     if connection:
         try:
             cursor = connection.cursor()
-            # Prepare the SQL query to delete all data
             delete_query = "DELETE FROM sensor_data"
             cursor.execute(delete_query)
             connection.commit()
@@ -133,7 +129,7 @@ def VibrationSensor():
 def display_text(smoke_value, vibration_status):
     try:
         with canvas(oled) as draw:
-            formatted_smoke = f"{smoke_value}"  # Ensure this is string compatible
+            formatted_smoke = f"{smoke_value}" 
             formatted_vibration = f"{vibration_status}"
 
             draw.text((10, 10), f"Smoke: {formatted_smoke} ppm", fill="blue")
@@ -142,10 +138,10 @@ def display_text(smoke_value, vibration_status):
     except Exception as e:
         print(f"Error displaying text: {e}")
 
-# Counter for inserted data
 data_count = 0
 
 def disasteract():
+    global data_count
     try:
         while True:
             current_button_state = GPIO.input(status_button)
@@ -162,21 +158,13 @@ def disasteract():
             vibration_status = VibrationSensor() 
             display_text(smoke_value, vibration_status)
 
-            if int(smoke_value) > 85:
-                smokebuzzer = "Active"
-            else:
-                smokebuzzer = "Inactive"
-            
-            if vibration_status == "1":
-                vibrationbuzzer = "Active"
-            else:
-                vibrationbuzzer = "Inactive"
+            smokebuzzer = "Active" if int(smoke_value) > 85 else "Inactive"
+            vibrationbuzzer = "Active" if vibration_status == "1" else "Inactive"
 
             print(f"{smoke_value}") 
             print(f"{vibration_status}") 
 
             current_time = datetime.now()
-
 
             insert_data_into_db(smoke_value, vibration_status, smokebuzzer, vibrationbuzzer, current_time)
 
@@ -197,6 +185,23 @@ def disasteract():
 @app.route('/')
 def index():
     return render_template('index1.html')
+
+@app.route('/data')
+def show_data():
+    connection = Db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM sensor_data")
+            data = cursor.fetchall()
+            return render_template('data_display.html', data=data)
+        except mysql.connector.Error as err:
+            print(f"Error fetching data: {err}")
+            return "Error fetching data"
+        finally:
+            cursor.close()
+            connection.close()
+    return "Database connection error"
 
 def run_flask():
     app.run(host='0.0.0.0', port=5066, debug=True)
