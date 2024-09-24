@@ -111,33 +111,34 @@ try:
         smoke_value = SmokeSensor()  
         vibration_status = VibrationSensor() 
 
-        if smoke_value > 85:
-            buzzerstatus ="Active"
-        else:
-            buzzerstatus ="Inactive"
+        if sensorstatus == 1:
+            if smoke_value > 85:
+                buzzerstatus ="Active"
+            else:
+                buzzerstatus ="Inactive"
 
-        if vibration_status == 1:
-            buzzerstatus1 ="Active"
-        else:
-            buzzerstatus1 ="Inactive"
+            if vibration_status == 1:
+                buzzerstatus1 ="Active"
+            else:
+                buzzerstatus1 ="Inactive"
 
-        display_text(smoke_value, vibration_status)
+            display_text(smoke_value, vibration_status)
 
-        print(f"{smoke_value}") 
-        print(f"{vibration_status}")
+            print(f"{smoke_value}") 
+            print(f"{vibration_status}")
 
-        currenTime =datetime.now()
-        cursor.execute('''
-            INSERT INTO SensorData (smoke, vibration, smoke_buzzer, vibration_buzzer, time)
-            VALUES (?, ?, ?, ?, ?)
-        ''',(smoke_value, vibration_status, buzzerstatus, buzzerstatus1, currenTime)) 
-        
-        databasereset +=1
+            currenTime =datetime.now()
+            cursor.execute('''
+                INSERT INTO SensorData (smoke, vibration, smoke_buzzer, vibration_buzzer, time)
+                VALUES (?, ?, ?, ?, ?)
+            ''',(smoke_value, vibration_status, buzzerstatus, buzzerstatus1, currenTime)) 
+            
+            databasereset +=1
 
-        if databasereset >= 150:
-            cursor.execute('DELETE FROM my_table')
-            dbconn.commit()
-            databasereset = 0
+            if databasereset >= 150:
+                cursor.execute('DELETE FROM my_table')
+                dbconn.commit()
+                databasereset = 0
 
         time.sleep(2) 
 
