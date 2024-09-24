@@ -6,6 +6,7 @@ import serial
 from luma.core.interface.serial import spi
 from luma.oled.device import ssd1306
 from luma.core.render import canvas
+from datetime import datetime  # Import datetime for timestamp
 
 spi_serial = spi(device=0, port=0)
 oled = ssd1306(spi_serial, rotate=2)
@@ -26,15 +27,18 @@ def Db_connection():
         print(f"Database connection error: {err}")
         return None
 
-# Function to insert data into the database
-def insert_data_into_db(smoke_value, vibration_status):
+# Update function to include new parameters
+def insert_data_into_db(smoke_value, vibration_status, smokebuzzer, vibrationbuzzer, timestamp):
     connection = Db_connection()
     if connection:
         try:
             cursor = connection.cursor()
-            # Prepare the SQL query
-            sql_query = "INSERT INTO sensor_data (smoke_value, vibration_status) VALUES (%s, %s)"
-            cursor.execute(sql_query, (smoke_value, vibration_status))
+            # Prepare the SQL query with additional fields
+            sql_query = """
+                INSERT INTO sensor_data (smoke_value, vibration_status, smoke_buzzer, vibration_buzzer, time)
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql_query, (smoke_value, vibration_status, smokebuzzer, vibrationbuzzer, timestamp))
             connection.commit()
             print("Data inserted successfully")
         except mysql.connector.Error as err:
@@ -82,6 +86,10 @@ def SmokeSensor():
     if smokestatus == 1:
         if arduino.in_waiting > 0:
             line = arduino.readline().decode('utf-8').rstrip()
+            if int(line) > 85:
+                buzzer_time(3)
+            else:
+                buzzer_off()
             return line 
         else:
             return "No data from Arduino" 
@@ -128,11 +136,24 @@ try:
         vibration_status = VibrationSensor() 
         display_text(smoke_value, vibration_status)
 
+        if int(smoke_value) > 85:
+            smokebuzzer = "Active"
+        else:
+            smokebuzzer = "Inactive"
+        
+        if vibration_status == "1":
+            vibrationbuzzer = "Active"
+        else:
+            vibrationbuzzer = "Inactive"
+
         print(f"{smoke_value}") 
         print(f"{vibration_status}") 
 
-        # Insert data into the database
-        insert_data_into_db(smoke_value, vibration_status)
+        # Get the current timestamp
+        current_time = datetime.now()
+
+        # Insert data into the database with new parameters
+        insert_data_into_db(smoke_value, vibration_status, smokebuzzer, vibrationbuzzer, current_time)
 
         time.sleep(1) 
 
