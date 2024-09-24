@@ -110,6 +110,10 @@ try:
         
         smoke_value = SmokeSensor()  
         vibration_status = VibrationSensor() 
+        display_text(smoke_value, vibration_status)
+
+        print(f"{smoke_value}") 
+        print(f"{vibration_status}")
 
         if sensorstatus == 1:
             if smoke_value > 85:
@@ -121,11 +125,6 @@ try:
                 buzzerstatus1 ="Active"
             else:
                 buzzerstatus1 ="Inactive"
-
-            display_text(smoke_value, vibration_status)
-
-            print(f"{smoke_value}") 
-            print(f"{vibration_status}")
 
             currenTime =datetime.now()
             cursor.execute('''
