@@ -151,6 +151,7 @@ data_count = 0
 
 
 def disasteract():
+    counter = 0
     global data_count, last_button_state
     try:
         while True:
@@ -184,7 +185,7 @@ def disasteract():
             if sensorstatus == 1:
                 insert_data_into_db(smoke_value, vibration_status, smokebuzzer, vibrationbuzzer, current_time)
                 
-                write_data_to_file(FILE_PATH, '{smoke_value},{vibration_status}\n') 
+                write_data_to_file(FILE_PATH, f'{smoke_value},{vibration_status}\n') 
 
             data_count += 1
 
@@ -213,7 +214,7 @@ def index():
     return render_template('index1.html')
 
 def run_flask():
-    app.run(host='0.0.0.0', port=5067, debug=True)
+    app.run(host='0.0.0.0', port=5068, debug=True)
 
 if __name__ == "__main__":
     disaster = Process(target=disasteract)
