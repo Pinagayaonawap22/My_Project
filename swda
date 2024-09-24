@@ -7,12 +7,16 @@ GPIO.setwarnings(False)
 
 Vibration_pin = 16
 buzzer_pin = 15
-status_button = 14 
-sensorstatus = False
+status_button = 23
+sensorstatus = 0
+smokestatus = 0
+Vibrationstatus = 0
 
 GPIO.setup(Vibration_pin, GPIO.IN)
 GPIO.setup(buzzer_pin, GPIO.OUT)
 GPIO.setup(status_button, GPIO.IN, pull_up_down=GPIO.PUD_UP) 
+
+last_button_state = GPIO.input(status_button)
 
 def buzzer_on():
     GPIO.output(buzzer_pin, GPIO.HIGH)
@@ -32,31 +36,40 @@ except serial.SerialException as e:
     print(f"Error Opening of port: {e}")
     exit()
 
-def push_button(channel):
-    global sensorstatus
-    sensorstatus = not sensorstatus
-    if sensorstatus:
-        print(f"Sensor active")
-    else:
-        print(f"Sensor inactive")
+try:
+    while True:
+        current_button_state = GPIO.input(status_button)
 
-GPIO.add_event_detect(status_button, GPIO.FALLING, callback=push_button, bouncetime=300)
+        if last_button_state == GPIO.HIGH and current_button_state == GPIO.LOW:
+           
+            sensorstatus = 1 if sensorstatus == 0 else 0
+            print(f"Count is now: {sensorstatus}")
+            time.sleep(0.2)  
+
+        last_button_state = current_button_state
+        
+        time.sleep(0.01)
+
+except KeyboardInterrupt:
+    print("Program stopped by User")
+
+except KeyboardInterrupt:
+    print("Sensor stopped")
 
 def SmokeSensor():
-    smokestatus = sensorstatus
-    if smokestatus:
+    global smokestatus
+    if smokestatus == 1:
         if arduino.in_waiting > 0:
             line = arduino.readline().decode('utf-8').rstrip()
             return line 
         else:
             return "No data from Arduino" 
     else:
-        print("Sensor is Off")
+        return "smoke is off"
 
 def VibrationSensor():
-    Vibrationstatus = sensorstatus
-    if VibrationSensor:
-
+    global Vibrationstatus
+    if Vibrationstatus == 1:
         if GPIO.input(Vibration_pin):
             buzzer_time(2)  
             return "1" 
@@ -64,7 +77,8 @@ def VibrationSensor():
             buzzer_off()
             return "0" 
     else:
-        print("Sensor is Off")
+        return "vibration is off"
+
 
 try:
     while True:
