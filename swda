@@ -8,8 +8,7 @@ from luma.oled.device import ssd1306
 from luma.core.render import canvas
 from datetime import datetime 
 from multiprocessing import Process
-from flask import Flask, render_template, request
-from flask import send_from_directory, send_file, Response
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
@@ -77,7 +76,7 @@ Vibrationstatus = 0
 
 GPIO.setup(Vibration_pin, GPIO.IN)
 GPIO.setup(buzzer_pin, GPIO.OUT)
-GPIO.setup(status_button, GPIO.IN, pull_up_down=GPIO.PUD_UP) 
+GPIO.setup(status_button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 last_button_state = GPIO.input(status_button)
 
@@ -129,7 +128,7 @@ def VibrationSensor():
 def display_text(smoke_value, vibration_status):
     try:
         with canvas(oled) as draw:
-            formatted_smoke = f"{smoke_value}" 
+            formatted_smoke = f"{smoke_value}"  # Ensure this is string compatible
             formatted_vibration = f"{vibration_status}"
 
             draw.text((10, 10), f"Smoke: {formatted_smoke} ppm", fill="blue")
@@ -141,12 +140,13 @@ def display_text(smoke_value, vibration_status):
 data_count = 0
 
 def disasteract():
-    global data_count
+    global data_count, last_button_state
     try:
         while True:
             current_button_state = GPIO.input(status_button)
 
             if last_button_state == GPIO.HIGH and current_button_state == GPIO.LOW:
+                global sensorstatus, smokestatus, Vibrationstatus
                 sensorstatus = 1 if sensorstatus == 0 else 0  
                 smokestatus = sensorstatus  
                 Vibrationstatus = sensorstatus 
@@ -185,23 +185,6 @@ def disasteract():
 @app.route('/')
 def index():
     return render_template('index1.html')
-
-@app.route('/data')
-def show_data():
-    connection = Db_connection()
-    if connection:
-        try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM sensor_data")
-            data = cursor.fetchall()
-            return render_template('data_display.html', data=data)
-        except mysql.connector.Error as err:
-            print(f"Error fetching data: {err}")
-            return "Error fetching data"
-        finally:
-            cursor.close()
-            connection.close()
-    return "Database connection error"
 
 def run_flask():
     app.run(host='0.0.0.0', port=5066, debug=True)
