@@ -1,17 +1,29 @@
 import RPi.GPIO as GPIO
 import time
 import serial
+from luma.core.interface.serial import spi
+from luma.oled.device import ssd1306
+from luma.core.render import canvas
+from PIL import ImageOps
 
+# Initialize SPI for the OLED display
+spi_serial = spi(device=0, port=0)
+oled = ssd1306(spi_serial, rotate=2)
+oled.command(0xA0)
+oled.command(0xC8)
+
+# Set up GPIO
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 Vibration_pin = 16
 buzzer_pin = 15
 status_button = 23
-sensorstatus = 0
-smokestatus = 0
-Vibrationstatus = 0
+sensorstatus = 0  
+smokestatus = 0   
+Vibrationstatus = 0  
 
+# Set up GPIO pins
 GPIO.setup(Vibration_pin, GPIO.IN)
 GPIO.setup(buzzer_pin, GPIO.OUT)
 GPIO.setup(status_button, GPIO.IN, pull_up_down=GPIO.PUD_UP) 
@@ -29,32 +41,13 @@ def buzzer_time(duration):
     time.sleep(duration)
     GPIO.output(buzzer_pin, GPIO.LOW)
 
+# Attempt to connect to the Arduino
 try:
     arduino = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
     arduino.flush()
 except serial.SerialException as e:
-    print(f"Error Opening of port: {e}")
+    print(f"Error Opening port: {e}")
     exit()
-
-try:
-    while True:
-        current_button_state = GPIO.input(status_button)
-
-        if last_button_state == GPIO.HIGH and current_button_state == GPIO.LOW:
-           
-            sensorstatus = 1 if sensorstatus == 0 else 0
-            print(f"Count is now: {sensorstatus}")
-            time.sleep(0.2)  
-
-        last_button_state = current_button_state
-        
-        time.sleep(0.01)
-
-except KeyboardInterrupt:
-    print("Program stopped by User")
-
-except KeyboardInterrupt:
-    print("Sensor stopped")
 
 def SmokeSensor():
     global smokestatus
@@ -65,7 +58,7 @@ def SmokeSensor():
         else:
             return "No data from Arduino" 
     else:
-        return "smoke is off"
+        return "offline"
 
 def VibrationSensor():
     global Vibrationstatus
@@ -77,21 +70,44 @@ def VibrationSensor():
             buzzer_off()
             return "0" 
     else:
-        return "vibration is off"
+        return "offline"
 
+def display_text(smoke_value, vibration_status):
+    try:
+        with canvas(oled) as draw:
+            formatted_smoke = f"{smoke_value}"  # Ensure this is string compatible
+            formatted_vibration = f"{vibration_status}"
+
+            draw.text((10, 10), f"Smoke: {formatted_smoke} ppm", fill="blue")
+            draw.text((10, 30), f"Vibration: {formatted_vibration} g", fill="blue")
+
+    except Exception as e:
+        print(f"Error displaying text: {e}")
 
 try:
     while True:
+        current_button_state = GPIO.input(status_button)
+
+        if last_button_state == GPIO.HIGH and current_button_state == GPIO.LOW:
+            sensorstatus = 1 if sensorstatus == 0 else 0  
+            smokestatus = sensorstatus  
+            Vibrationstatus = sensorstatus 
+            time.sleep(0.2) 
+
+        last_button_state = current_button_state 
+        
         smoke_value = SmokeSensor()  
         vibration_status = VibrationSensor() 
-        
+        display_text(smoke_value, vibration_status)
+
         print(f"{smoke_value}") 
         print(f"{vibration_status}") 
         
         time.sleep(1) 
 
 except KeyboardInterrupt:
-    print("Sensor stopped")
-    
+    print("Program stopped by User")
+
 finally:
-    GPIO.cleanup() 
+    GPIO.cleanup()
+
