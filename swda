@@ -33,17 +33,7 @@ last_button_state = GPIO.input(status_button)
 
 dbconn = sqlite3.connect('mydatabase.db')
 cursor = dbconn.cursor()
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS SensorData (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        smoke_value TEXT,
-        vibration_status TEXT,
-        smoke_buzzer TEXT, 
-        vibration_buzzer TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-''')
-dbconn.commit()
+
 
 def buzzer_on():
     GPIO.output(buzzer_pin, GPIO.HIGH)
@@ -126,7 +116,7 @@ try:
         else:
             buzzerstatus ="Inactive"
 
-        if vibration_status = 1:
+        if vibration_status == 1:
             buzzerstatus1 ="Active"
         else:
             buzzerstatus1 ="Inactive"
@@ -138,14 +128,14 @@ try:
 
         currenTime =datetime.now()
         cursor.execute('''
-            INSERT INTO SensorData (smoke_value, vibration_status, smoke_buzzer, vibration_buzzer, timestamp)
+            INSERT INTO SensorData (smoke, vibration, smoke_buzzer, vibration_buzzer, time)
             VALUES (?, ?, ?, ?, ?)
         ''',(smoke_value, vibration_status, buzzerstatus, buzzerstatus1, currenTime)) 
         
         databasereset +=1
 
         if databasereset >= 150:
-            cursor.execute('DELETE FROM mydatabase')
+            cursor.execute('DELETE FROM my_table')
             dbconn.commit()
             databasereset = 0
 
