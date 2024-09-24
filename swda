@@ -7,12 +7,12 @@ GPIO.setwarnings(False)
 
 Vibration_pin = 16
 buzzer_pin = 15
-status_button = 14  # This pin is defined but not used
-sensorstatus = True
+status_button = 14 
+sensorstatus = False
 
 GPIO.setup(Vibration_pin, GPIO.IN)
 GPIO.setup(buzzer_pin, GPIO.OUT)
-
+GPIO.setup(status_button, GPIO.IN, pull_up_down=GPIO.PUD_UP) 
 
 def buzzer_on():
     GPIO.output(buzzer_pin, GPIO.HIGH)
@@ -23,7 +23,7 @@ def buzzer_off():
 def buzzer_time(duration):
     GPIO.output(buzzer_pin, GPIO.HIGH)
     time.sleep(duration)
-    GPIO.output(buzzer_pin, GPIO.LOW)  # Turn off the buzzer
+    GPIO.output(buzzer_pin, GPIO.LOW)
 
 try:
     arduino = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
@@ -31,34 +31,53 @@ try:
 except serial.SerialException as e:
     print(f"Error Opening of port: {e}")
     exit()
-        
-def SmokeSensor():
-    if arduino.in_waiting > 0:
-        line = arduino.readline().decode('utf-8').rstrip()
-        return line  # Return the smoke sensor value
+
+def push_button(channel):
+    global sensorstatus
+    sensorstatus = not sensorstatus
+    if sensorstatus:
+        print(f"Sensor active")
     else:
-        return "No data from Arduino"  # Return a message if there's no data
+        print(f"Sensor inactive")
+
+GPIO.add_event_detect(status_button, GPIO.FALLING, callback=push_button, bouncetime=300)
+
+def SmokeSensor():
+    smokestatus = sensorstatus
+    if smokestatus:
+        if arduino.in_waiting > 0:
+            line = arduino.readline().decode('utf-8').rstrip()
+            return line 
+        else:
+            return "No data from Arduino" 
+    else:
+        print("Sensor is Off")
 
 def VibrationSensor():
-    if GPIO.input(Vibration_pin):
-        buzzer_time(2)  # Activate buzzer for 2 seconds if vibration is detected
-        return "Vibration Detected"  # Return vibration status
+    Vibrationstatus = sensorstatus
+    if VibrationSensor:
+
+        if GPIO.input(Vibration_pin):
+            buzzer_time(2)  
+            return "1" 
+        else:
+            buzzer_off()
+            return "0" 
     else:
-        buzzer_off()
-        return "No Vibration"  # Return vibration status
+        print("Sensor is Off")
 
 try:
     while True:
-        smoke_value = SmokeSensor()  # Get smoke value
-        vibration_status = VibrationSensor()  # Get vibration status
+        smoke_value = SmokeSensor()  
+        vibration_status = VibrationSensor() 
         
-        print(f"Smoke value: {smoke_value}")  # Print smoke value
-        print(f"Vibration status: {vibration_status}")  # Print vibration status
+        print(f"{smoke_value}") 
+        print(f"{vibration_status}") 
         
-        time.sleep(1)  # Added delay to avoid rapid polling
+        time.sleep(1) 
 
 except KeyboardInterrupt:
     print("Sensor stopped")
     
 finally:
-    GPIO.cleanup()  # Cleanup GPIO settings
+    GPIO.cleanup() 
