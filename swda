@@ -1,222 +1,85 @@
-import RPi.GPIO as GPIO
-import mysql.connector
-import time
-import os
-import serial
-from luma.core.interface.serial import spi
-from luma.oled.device import ssd1306
-from luma.core.render import canvas
-from datetime import datetime
-from multiprocessing import Process
-from flask import Flask, render_template, jsonify
+#include "DHT.h"
 
-app = Flask(__name__)
+#define PHsensor A0
+#define OFFSET 0.00
+#define DhtPin 3
+#define flowpin 4
+#define SAMPLING_INTERVAL 1000
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
-FILE_PATH = os.path.join(TEMPLATES_DIR, 'file_motion.txt')
+volatile int flowpulsecount = 0;
+float flowRate;
+unsigned long previousMillis = 0;
+const int watersensor = 2;
+int waterdata =0;
 
-spi_serial = spi(device=0, port=0)
-oled = ssd1306(spi_serial, rotate=2)
-oled.command(0xA0)
-oled.command(0xC8)
+#define DHTTYPE DHT22
+DHT dht(DhtPin, DHTTYPE);
 
-def Db_connection():
-    try:
-        connection = mysql.connector.connect(
-            host='localhost',
-            user='Embedded_act',
-            password='bet1234',
-            database='mydatabase'
-        )
-        print("Database connection successful")
-        return connection
-    except mysql.connector.Error as err:
-        print(f"Database connection error: {err}")
-        return None
+float voltagePh;
+float Phvalue;
+unsigned long Phtime = 0;
 
-def insert_data_into_db(smoke_value, vibration_status, smokebuzzer, vibrationbuzzer, timestamp):
-    connection = Db_connection()
-    if connection:
-        try:
-            cursor = connection.cursor()
-            sql_query = """
-                INSERT INTO sensor_data (smoke_value, vibration_status, smoke_buzzer, vibration_buzzer, time)
-                VALUES (%s, %s, %s, %s, %s)
-            """
-            cursor.execute(sql_query, (smoke_value, vibration_status, smokebuzzer, vibrationbuzzer, timestamp))
-            connection.commit()
-            print("Data inserted successfully")
-        except mysql.connector.Error as err:
-            print(f"Error inserting data: {err}")
-        finally:
-            cursor.close()
-            connection.close()
+void setup() {
+  Serial.begin(9600);
+  pinMode(watersensor, INPUT);
+  pinMode(PHsensor, INPUT);
+  pinMode(flowpin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(flowpin), countFlow, RISING);
+  dht.begin();
+}
 
-def reset_table():
-    connection = Db_connection()
-    if connection:
-        try:
-            cursor = connection.cursor()
-            delete_query = "DELETE FROM sensor_data"
-            cursor.execute(delete_query)
-            connection.commit()
-            print("Table reset successfully")
-        except mysql.connector.Error as err:
-            print(f"Error resetting table: {err}")
-        finally:
-            cursor.close()
-            connection.close()
+void loop() {
+  waterdata  = digitalRead(watersensor);
+  float tempdata = dht.readTemperature();
+  float humidData = dht.readHumidity();
+  unsigned long currentmillis = millis();
 
-def write_data_to_file(file_path, data):
-    with open(file_path, 'a') as file:
-        file.write(data)
-        file.flush()
+  if (isnan(tempdata)|| isnan(humidData)){
+    Serial.print("Temperature: ");
+    Serial.println("No Sensor");
+    Serial.print("Humidity: ");
+    Serial.print(humidData);
+    Serial.println("No Sensor");
+  }
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
+    Serial.print("Temperature: ");
+    Serial.print(tempdata);
+    Serial.println(" C");
+    Serial.print("Humidity: ");
+    Serial.print(humidData);
+    Serial.println(" %");
 
-Vibration_pin = 16
-buzzer_pin = 27
-status_button = 23
-sensorstatus = 0
-smokestatus = 0
-Vibrationstatus = 0
+  if (waterdata == 1){
+      Serial.print("Water status: ");
+      Serial.println("Mayroon ng Tubig");
+  }else{
+      Serial.print("Water status: ");
+      Serial.println("Walang Tubig");
+  }
+  if (millis()- Phtime > SAMPLING_INTERVAL){
+    Phtime = millis();
 
-GPIO.setup(Vibration_pin, GPIO.IN)
-GPIO.setup(buzzer_pin, GPIO.OUT)
-GPIO.setup(status_button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    int Phdata = analogRead(PHsensor);
+    voltagePh =Phdata * (5.0 / 1023.0);
+    Phvalue = 7 + ((2.5 - voltagePh) / 0.18);
 
-last_button_state = GPIO.input(status_button)
+    Phvalue += OFFSET;
 
-def buzzer_on():
-    GPIO.output(buzzer_pin, GPIO.HIGH)
+    Serial.print("Ph level: ");
+    Serial.println(Phvalue);
+  }
+  if (currentmillis - previousMillis >= 1000){
+    previousMillis = currentmillis;
+    flowRate = (flowpulsecount / 7.5);
+    flowpulsecount =0;
+  
+    Serial.print("Flow rate: ");
+    Serial.print(flowRate);
+     Serial.println(" L/min");
+  }
+  delay(2000);
+}
 
-def buzzer_off():
-    GPIO.output(buzzer_pin, GPIO.LOW)
-
-def buzzer_time(duration):
-    GPIO.output(buzzer_pin, GPIO.HIGH)
-    time.sleep(duration)
-    GPIO.output(buzzer_pin, GPIO.LOW)
-
-try:
-    arduino = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
-    arduino.flush()
-except serial.SerialException as e:
-    print(f"Error Opening port: {e}")
-    exit()
-
-def SmokeSensor():
-    global smokestatus
-    if smokestatus == 1:
-        if arduino.in_waiting > 0:
-            line = arduino.readline().decode('utf-8').rstrip()
-            if int(line) > 85:
-                buzzer_time(3)
-            else:
-                buzzer_off()
-            return line
-        else:
-            return "No data from Arduino"
-    else:
-        return "Smoke sensor is off"
-
-def VibrationSensor():
-    global Vibrationstatus
-    if Vibrationstatus == 1:
-        if GPIO.input(Vibration_pin):
-            buzzer_time(2)
-            return "1"
-        else:
-            buzzer_off()
-            return "0"
-    else:
-        return "Vibration sensor is off"
-
-def display_text(smoke_value, vibration_status):
-    try:
-        with canvas(oled) as draw:
-            formatted_smoke = f"{smoke_value}"
-            formatted_vibration = f"{vibration_status}"
-
-            draw.text((10, 10), f"Smoke: {formatted_smoke} ppm", fill="blue")
-            draw.text((10, 30), f"Vibration: {formatted_vibration} g", fill="blue")
-
-    except Exception as e:
-        print(f"Error displaying text: {e}")
-
-# Counter for inserted data
-data_count = 0
-
-
-def disasteract():
-    counter = 0
-    global data_count, last_button_state
-    try:
-        while True:
-            current_button_state = GPIO.input(status_button)
-
-            if last_button_state == GPIO.HIGH and current_button_state == GPIO.LOW:
-                global sensorstatus, smokestatus, Vibrationstatus
-                sensorstatus = 1 if sensorstatus == 0 else 0  
-                smokestatus = sensorstatus  
-                Vibrationstatus = sensorstatus 
-                time.sleep(0.2)
-
-            last_button_state = current_button_state 
-            
-            smoke_value = SmokeSensor()  
-            vibration_status = VibrationSensor() 
-            display_text(smoke_value, vibration_status)
-
-            try:
-                smoke_value_int = int(smoke_value)
-                smokebuzzer = "Active" if smoke_value_int > 85 else "Inactive"
-            except ValueError:
-                smokebuzzer = "Inactive" 
-
-            vibrationbuzzer = "Active" if vibration_status == "1" else "Inactive"
-
-            print(f"Smoke Value: {smoke_value}") 
-            print(f"Vibration Status: {vibration_status}") 
-
-            current_time = datetime.now()
-            if sensorstatus == 1:
-                insert_data_into_db(smoke_value, vibration_status, smokebuzzer, vibrationbuzzer, current_time)
-                
-                write_data_to_file(FILE_PATH, f'{smoke_value},{vibration_status}\n') 
-
-            data_count += 1
-
-            if data_count >= 100:
-                reset_table()
-                data_count = 0 
-            
-            counter += 1
-
-            if counter >= 100:
-                counter = 0
-                print("Resetting file after 100 entries")
-                with open(FILE_PATH, 'w') as file:
-                    pass 
-
-            time.sleep(1)
-
-    except KeyboardInterrupt:
-        print("Program stopped by User")
-
-    finally:
-        GPIO.cleanup()
-
-@app.route('/')
-def index():
-    return render_template('index1.html')
-
-def run_flask():
-    app.run(host='0.0.0.0', port=5068, debug=True)
-
-if __name__ == "__main__":
-    disaster = Process(target=disasteract)
-    disaster.start()
-    run_flask()
+void countFlow() {
+  flowpulsecount++;  
+}
