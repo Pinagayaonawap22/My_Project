@@ -47,7 +47,7 @@
         }
         #rightDiv {
             display: flex;
-            background-color: #FEFAE0;
+            background: linear-gradient(to top, #0e4f8b, #dbdfe0);
             width: 100%;
             height: 100%;
             position: relative;
@@ -110,12 +110,19 @@
         #smokeChart{
             width: 100%;
             height: 300px;
-            border: 1px solid;   
+           
         }
-        #VibrationChart{
+        #vibrationChart{
             width: 100%;
-            height: 300px;
-            border: 1px solid;   
+            height: 300px; 
+        }
+        #soundChart{
+            width: 100%;
+            height: 250px; 
+        }
+        #rainChart{
+            width: 100%;
+            height: 250px; 
         }
         #recentImage {
             display: none;
@@ -124,7 +131,7 @@
         }
         .sensor-card {
             background-color: white;
-            height: 550px;
+            height: 560px;
             width: 45%;
             padding: 15px;
             border-radius: 10px;
@@ -162,22 +169,12 @@
             border-radius: 5px;
             font-size: 1.5em;
             font-weight: bold;
-            
-        }
-
-        .status-ok {
-            background-color: #d4edda; /* Light Green */
-            color: #155724;
-        }
-
-        .status-warning {
-            background-color: #fff3cd; /* Light Yellow */
-            color: #856404;
-        }
-
-        .status-danger {
-            background-color: #f8d7da; /* Light Red */
-            color: #721c24;
+            width:100%;
+            height: 5%;
+            text-align: left; 
+            display: flex;
+         
+            align-items: center;
         }
 
         .sensor-info {
@@ -187,7 +184,7 @@
 
         }
         .database-button, .control-button {
-            background-color: #8b5a2b; /* Medium Brown */
+            background-color: #8b5a2b; 
             color: white;
             padding: 10px 15px;
             border: none;
@@ -197,10 +194,11 @@
             text-align: center;
             margin-top: 10px;
             transition: background-color 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
         .database-button:hover, .control-button:hover {
-            background-color: red; /* Darker Brown on Hover */
+            background-color: red; 
         }
         #colorbuzzer1{
             width: 50px;
@@ -208,13 +206,124 @@
             justify-content: center;
             margin-right: 30px;
             border-width: 50px;
-            box-shadow: #856404;
-            border-color: black;
         }
         .optionbutton{
             font-family: roboto, Times;
             font-size: 100%;
             font-weight: bold;
+        }
+        .colorstatus{
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+                table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse:separate;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .act5header {
+            background-color: #007BFF;
+            color: white;
+            padding: 15px;
+            border-radius: 10px; 
+            width: 100%;
+            max-width: 900px; 
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
+            margin: 0 auto; 
+            display: flex;
+            align-items: center;
+            margin-top: -10px;
+            margin-bottom: 10px;
+        }
+        .act5main{
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: flex-start;
+            width: 1000%;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            flex-wrap: wrap;
+        }
+        .act5sec{
+            background-color: #f0f8ff;
+            border-radius: 10px;
+            padding: 10px;
+            width: 45%;
+            min-width: 200px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            transition: transform 0.8s ease;
+            margin-bottom: -30px;
+        }
+        .act5sec h5 {
+            font-size: 1.5em;
+            color: #007BFF;
+            margin-bottom: 5px;
+        }
+        .act5sec:hover {
+            transform: scale(1.07);
+        }   
+        .act5main h7{
+            font-size: 40px;
+            width: 100%;
+            max-width: 900px; 
+            text-align: center;
+            font-family: 'Raleway', sans-serif;
+            font-weight: bold;
+            margin-top: -10px;
+            margin-bottom: 4px;
+        }
+        .act5sec p {
+            font-size: 1.2em;
+            color: #333;
+        }
+        .databasebuttonact5{
+            background-color:  #007BFF; 
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .statusact5{
+            padding: 4px 6px;
+            border-radius: 5px;
+            font-size: 1.0em;
+            font-weight: bold;
+            width:100%;
+            height: 5%;
+            text-align: left; 
+            display: flex;
+         
+            align-items: center;  
         }
     </style>
 </head>
@@ -292,7 +401,7 @@
                 </div>
                 <div style="justify-items: center; align-items: center; position: relative; display: flex; width: 100%; height: 65%;">
                     <div style="height: 100%; width: 50%;">
-                        <canvas id="motionChart"></canvas>
+                        
                     </div>
                     <div style="display: grid; justify-content:center; height: 100%; width: 50%;">
                         <h1> CAPTURED IMAGE</h1>
@@ -302,7 +411,7 @@
                     </div>
                 </div>
              </div>
-             <div id="tabOpen4" class="acttab active">
+             <div id="tabOpen4" class="acttab">
                 <header>
                     <p style="text-align: center; margin-top: -0.1px;"> Activity 4: GAS AND VIBRATION SENSOR WITH WEBSITE</p>
                 </header>
@@ -314,17 +423,14 @@
                         </div>
                     </div>
                     <div class="sensor-info">
-                        Current Smoke Level: <strong id="smoke-level">0 ppm</strong>
+                        <p>Smoke Level: <span id="displaysmoke">0.00 ppm</span></p>
                     </div>
                     <canvas id="smokeChart"></canvas>
 
-                    <div class="sensor-status status-ok" id="smoke-status">
-                        Status: Normal
+                    <div class="sensor-status" id="statusDisplay1">
+                        <p>Status: <span id="statusSmoke"></span></p>
                     </div>
-
-                    <button class="control-button" id="turn-off-smoke">
-                        Turn Off Smoke Sensor
-                    </button>
+                        <button type="submit">Toggle Smoke Sensor</button>
                 </div>
                 
                 <div class="sensor-card">
@@ -335,31 +441,137 @@
                         </div>
                     </div>
                     <div class="sensor-info">
-                        Current Vibration Level: <strong id="vibration-level">0.0 g</strong>
+                         <p>Vibration Level: <span id="displayvibration">0.00 g</span></p>
                     </div>
                     <canvas id="vibrationChart"></canvas>
 
-                    <div class="sensor-status status-warning" id="earthquake-status">
-                        Status: No Activity
+                    <div class="sensor-status" id="statusDisplay">
+                        <p>Status: <span id="statusVibration">No activity</span></p>
                     </div>
-
-                    <button class="control-button" id="turn-off-earthquake">
-                        Turn Off Earthquake Sensor
-                    </button>
+                    <button class="database-button" onclick="toggleVibration()"> Vibration Sensor button</button>
                 </div>
 
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="database-button" id="view-database">
+                <div style="text-align: center; margin-top: 40px;">
+                    <button class="database-button" onclick="tabControl(13)">
                         View Database
                     </button>
                 </div>
              </div>
+             <div id = "tabOpen13" class="acttab">
+                <div style="text-align: center; display: grid; justify-content: center; align-items: center; height: 100%;">
+                    <h1>Sensor Data</h1>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Smoke Value</th>
+                                <th>Vibration Status</th>
+                                <th>Smoke Buzzer</th>
+                                <th>Vibration Buzzer</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if data %}
+                                {% for row in data[:10] %}  {# Display only the first 10 rows #}
+                                <tr>
+                                    <td>{{ row[0] }}</td>
+                                    <td>{{ row[1] }}</td>
+                                    <td>{{ row[2] }}</td>
+                                    <td>{{ row[3] }}</td>
+                                    <td>{{ row[4] }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5">Click "Refresh Data" to display the latest sensor record.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <form method="POST" style="display: flex; align-items: center; justify-content: center;">
+                        <button type="submit">Refresh Data</button>
+                    </form>
+                </div>
+             </div>
+
+             <div id="tabOpen5" class="acttab active">
+                <header class="act5header">
+                    <h4>Sensor Monitor: Sounds and Raindrop Detection</h4>
+                </header>
+                <div class="act5main">
+
+                    <h7>weather for today is raining</h7>
+
+                    <div class="act5sec">
+                      <h5>Sound Sensor</h5>
+                      <p>Sounds Level: <span id="displaysounds">0 dB</span></p>
+                      <canvas id="soundChart"></canvas>
+                      <div class="statusact5" id="statusDisplay">
+                        <p>Status: <span id="statusVibration">No activity</span></p>
+                      </div>
+                    </div>
+                    
+                    <div class="act5sec">
+                      <h5>Raindrop Sensor</h5>
+                      <p>Rain Count: <span id="displayrain">0 Rd</span></p>
+                      <canvas id="rainChart"></canvas>
+                      <div class="statusact5" id="statusDisplay">
+                        <p>Status: <span id="statusVibration">No activity</span></p>
+                      </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 40px;">
+                        <button class="databasebuttonact5" onclick="tabControl(14)">
+                            View Database
+                        </button>
+                        <button type="submit">Toggle Smoke Sensor</button>
+                    </div>
+
+                </div>
+             </div>
+
+             <div id = "tabOpen14" class="acttab">
+                <div style="text-align: center; display: grid; justify-content: center; align-items: center; height: 100%;">
+                    <h1>Sensor Data</h1>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Smoke Value</th>
+                                <th>Vibration Status</th>
+                                <th>Smoke Buzzer</th>
+                                <th>Vibration Buzzer</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if data %}
+                                {% for row in data[:10] %}  {# Display only the first 10 rows #}
+                                <tr>
+                                    <td>{{ row[0] }}</td>
+                                    <td>{{ row[1] }}</td>
+                                    <td>{{ row[2] }}</td>
+                                    <td>{{ row[3] }}</td>
+                                    <td>{{ row[4] }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5">Click "Refresh Data" to display the latest sensor record.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <form method="POST" style="display: flex; align-items: center; justify-content: center;">
+                        <button type="submit">Refresh Data</button>
+                    </form>
+                </div>
+             </div>
+
         </div>
         
     </div> 
 
 <script>
-
         document.getElementById('toggleButton1').addEventListener('click', function() {
             var img = document.getElementById('recentImage');
             var button = document.getElementById('toggleButton1');
@@ -382,7 +594,7 @@
     
         function tabControl(chooseDiv) {
             console.log("Tab control called with:", chooseDiv);
-            for (let i = 1; i <= 11; i++) {
+            for (let i = 1; i <= 14; i++) {
                 const tab = document.getElementById('tabOpen' + i);
                 if (tab) {
                     tab.classList.remove('active');
@@ -396,56 +608,158 @@
             }
         }
 
-        let smokeChart;
-        let vibrationChart;
+        async function toggleStatus() {
+            const response = await fetch('/toggle_status', {
+                method: 'POST',
+            });
+            const data = await response.json();
+            alert(`Status changed to: ${data.status}`);
+        }
+
+        let soundChart;
+        let rainChart;
+        const buzzerstat = document.getElementById('colorbuzzer1')
 
         async function txtfetching() {
             try {
-                const response = await fetch('/file_motion.txt'); 
+                const response = await fetch('/weatherfile.txt'); 
+                console.log('Response Status:', response.status); 
                 if (!response.ok) throw new Error('Network response was not ok');
+                
                 const text = await response.text();
-                
+                console.log('Fetched text:', text); 
+
                 const lines = text.trim().split('\n');
-                const smokeData = [];
-                const vibrationData = [];
-                
+                const soundsData = [];
+                const rainData = [];
+                      
                 lines.forEach(line => {
-                    const [smoke, vibration] = line.split(',').map(Number); 
-                    if (!isNaN(smoke) && !isNaN(vibration)) {
-                        smokeData.push(smoke);
-                        vibrationData.push(vibration);
+                    const [sounds1, raindrop1] = line.split(',').map(Number); 
+                       
+                    const soundValue = parseFloat(sounds1);
+                    const rainValue = parseFloat(raindrop1);
+                    if (!isNaN(soundValue) && !isNaN(rainValue)) {
+                        soundsData.push(soundValue);
+                        rainData.push(rainValue);
                     }
                 });
 
-                return { smokeData, vibrationData };
+                console.log('Sound Data:', soundsData); 
+                console.log('Rain Data:', rainData);
+
+                return { soundsData, rainData };
                 
             } catch (error) {
                 console.error('Error fetching data:', error);
-                return { smokeData: [], vibrationData: [] };
+                return { soundsData: [], rainData: [] };
             }
         }
+
+        async function textdisplay() {
+            const data = await txtfetching();
+
+            if (data.soundsData.length === 0 || data.rainData.length === 0) {
+                console.error('No data available to display');
+                return;
+            }
+            
+            let latestsound = data.soundsData[data.soundsData.length - 1];
+            let latestrainion = data.rainData[data.rainData.length - 1];
+            const rainnum = latestrainion;
+            const soundnum = latestsound;
+            
+            document.getElementById('displaysounds').textContent = `${latestsound.toFixed(2)} dB`;
+            document.getElementById("displayrain").textContent = `${latestrainion.toFixed(2)} Rd`;
+            
+            if(rainnum === 1){
+                const statusdisplay = document.getElementById('statusDisplay'); 
+                statusdisplay.style.backgroundColor = "#f8d7da";
+                document.getElementById('statusVibration').textContent = "Vibration Detected";
+            }else if(rainnum === 0){
+                const statusdisplay = document.getElementById('statusDisplay'); 
+                statusdisplay.style.backgroundColor = "#fff3cd";
+                document.getElementById('statusVibration').textContent = "No activity";
+            }
+            if(soundnum < 70){
+                const statusdisplay1 = document.getElementById('statusDisplay1'); 
+                statusdisplay1.style.backgroundColor = "#d4edda";
+                document.getElementById('statusSmoke').textContent = "Normal (No Smoke Detected)";
+            }else if(soundnum > 71 && soundnum < 130){
+                const statusdisplay1 = document.getElementById('statusDisplay1'); 
+                statusdisplay1.style.backgroundColor = "#fff3cd";
+                document.getElementById('statusSmoke').textContent = "Warning (Low Smoke Level)";
+            }else if(soundnum > 131){
+                const statusdisplay1 = document.getElementById('statusDisplay1'); 
+                statusdisplay1.style.backgroundColor = "#f8d7da";
+                document.getElementById('statusSmoke').textContent = "Alert (High Smoke Level)"; 
+            }
+         }   
 
 
         async function renderCharts() {
             const data = await txtfetching();
-            if (data.length === 0) {
+            if (data.soundsData.length === 0 || data.rainData.length === 0) {
                 console.error('No data available to display');
                 return;
             }
-
-    
-            const smokeCtx = document.getElementById('smokeChart').getContext('2d');
-            if (!smokeChart) {
-                smokeChart = new Chart(smokeCtx, {
+            const soundCtx = document.getElementById('soundChart').getContext('2d');
+            if (!soundChart) {
+                console.log('Creating sounds chart');
+                soundChart = new Chart(soundCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.soundsData.map((_, index) => index + 1), 
+                        datasets: [{
+                            label: 'Sounds Level (db)',
+                            data: data.soundsData.map(Number),
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                            fill: false,
+                            tension: 0.1,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Decibel'
+                                },
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Time'
+                                },
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } else {
+                console.log('Updating sound chart');
+                soundChart.data.labels = data.soundsData.map((_, index) => index + 1);
+                soundChart.data.datasets[0].data = data.soundsData.map(Number);
+                soundChart.update();
+            }
+            const rainCtx = document.getElementById('rainChart').getContext('2d');
+            if (!rainChart) {
+                console.log('Creating raindrop chart');
+                rainChart = new Chart(rainCtx, {
                     type: 'line',
                     data: {
-                        labels: smokeData.map((_, index) => index + 1),
+                        labels: data.rainData.map((_, index) => index + 1),
                         datasets: [{
-                            label: 'smoke level',
-                            data: smokeData,
-                            borderColor: 'green',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            fill: false,
+                            label: 'Rain Count(l)',
+                            data: data.rainData,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 02.)',
+                            fill: true,
                             tension: 0.1
                         }]
                     },
@@ -455,7 +769,7 @@
                             x: {
                                 title: {
                                     display: true,
-                                    text: 'Data Point'
+                                    text: 'Counts'
                                 },
                                 ticks: {
                                     stepSize: 1
@@ -464,7 +778,7 @@
                             y: {
                                 title: {
                                     display: true,
-                                    text: 'smoke level (ppm)'
+                                    text: 'Times'
                                 },
                                 beginAtZero: true
                             }
@@ -472,61 +786,24 @@
                     }
                 });
             } else {
-                smokeChart.data.labels = smokeData.map((_, index) => index + 1);
-                smokeChart.data.datasets[0].data = smokeData;
-                smokeChart.update();
+                console.log('Updating rain chart'); 
+                rainChart.data.labels = data.rainData.map((_, index) => index + 1);
+                rainChart.data.datasets[0].data = data.rainData;
+                rainChart.update();
             }
 
-            // Render Water Level Chart
-            const vibrationCtx = document.getElementById('vibrationChart').getContext('2d');
-            if (!vibrationChart) {
-                vibrationChart = new Chart(vibrationCtx, {
-                    type: 'line',
-                    data: {
-                        labels: vibrationData.map((_, index) => index + 1),
-                        datasets: [{
-                            label: 'vibration activity',
-                            data: vibrationData,
-                            borderColor: 'blue',
-                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                            fill: false,
-                            tension: 0.1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Data Point'
-                                },
-                                ticks: {
-                                    stepSize: 1
-                                }
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: 'vibration activity'
-                                },
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            } else {
-                vibrationChart.data.labels = vibrationData.map((_, index) => index + 1);
-                vibrationChart.data.datasets[0].data = vibrationData;
-                vibrationChart.update();
-            }
-
-            console.log('Charts updated with data:', {smokeData, vibrationData});
+            console.log('Charts updated with data:', { soundsData: data.soundsData, rainData: data.rainData });
         }
 
-        window.onload = renderCharts;
-        setInterval(renderCharts, 2000);
+      
+        window.onload = () => {
+            renderCharts(); 
+            setInterval(renderCharts, 1500); 
+        };
+textdisplay();
+setInterval(textdisplay, 900);
 </script>
     
 </body>
 </html>
+recent_image
