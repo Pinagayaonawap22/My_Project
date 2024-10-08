@@ -334,23 +334,23 @@
 
     <section class="Dashboarddiv hidden" id="Dashboard">
         <section id="summary">
-          <h2>System Overview</h2>
+          <h2>Hydroponic Overview</h2>
           <div class="summary-cards">
             <div class="card">
               pH Level
-              <p>Status: <span id="status">No activity</span></p>
+              <p>Status: <span id="displaytemp">No activity</span></p>
             </div>
             <div class="card">
               Temperature
-              <p>Status: <span id="status">No activity</span></p>
+              <p>Status: <span id="displayhumid">No activity</span></p>
             </div>
             <div class="card">
               Humidity
-              <p>Status: <span id="status">No activity</span></p>
+              <p>Status: <span id="displayph">No activity</span></p>
             </div>
             <div class="card">
               Water level
-              <p>Status: <span id="status">No activity</span></p>
+              <p>Status: <span id="displaywaterlevel">No activity</span></p>
             </div>
           </div>
         </section>
@@ -362,11 +362,11 @@
           </div>
           <div class="chart-container">
             <h2>Temperature & Humidity</h2>
-            <canvas id="tempHumChart"></canvas>
+            <canvas id="tempHumpChart"></canvas>
           </div>
           <div class="chart-container">
             <h2>Water Container Level</h2>
-            <canvas id="waterLevelChart"></canvas>
+            <canvas id="waterlevelChart"></canvas>
           </div>
         </section>
     </section>
@@ -515,76 +515,199 @@
           humidity: [],
           waterPresence: [],
           pH: [],
-          flow: [],
           waterLevel: []
         };
 
         lines.forEach(line => {
-          const [tempfetch, humidfetch, waterfetch, phfetch, flowfetch, waterleve] = line.split(',').map(Number);
+          const [tempfetch, humidfetch, waterfetch, phfetch, waterlevelfetch] = line.split(',').map(Number);
           
-          const values = [tempfetch, humidfetch, waterfetch, phfetch, flowfetch, waterleve].map(parseFloat);
+          const values = [tempfetch, humidfetch, waterfetch, phfetch, waterlevelfetch].map(parseFloat);
           
           if (values.every(value => !isNaN(value))) {
             data.temperature.push(values[0]);
             data.humidity.push(values[1]);
             data.waterPresence.push(values[2]); 
             data.pH.push(values[3]);
-            data.flow.push(values[4]);
-            data.waterLevel.push(values[5]);
+            data.waterLevel.push(values[4]);
           }
         });
       } catch (error) {
-                console.error('Error fetching data:', error);
-                return { soundsData: [], rainData: [] };
+          console.error('Error fetching data:', error);
+          return
       }
     }
+    
+    async function textdisplay(){
+      const data = await datafetching();
 
-    const phChartCtx = document.getElementById('phChart').getContext('2d');
-    const phChart = new Chart(phChartCtx, {
-      type: 'line',
-      data: {
-        labels: ['Time 1', 'Time 2', 'Time 3'],
-        datasets: [{
-          label: 'pH Levels',
-          data: [7.0, 6.8, 7.2],
-          borderColor: 'blue',
-          fill: false
-        }]
-      }
-    });
+      let latesttemp = data.temperature[data.temperature.length - 1];
+      let latesthumid =  data.humidity[ data.humidity.length - 1];
+      let latestph = data.pH[data.pH.length - 1];
+      let latestwaterlevel = data.waterLevel[data.waterLevel.length - 1];
+      let latestprecense = data.waterPresence[data.waterPresence.length - 1];
 
-    const tempHumChartCtx = document.getElementById('tempHumChart').getContext('2d');
-    const tempHumChart = new Chart(tempHumChartCtx, {
-      type: 'bar',
-      data: {
-        labels: ['Time 1', 'Time 2', 'Time 3'],
-        datasets: [
-          {
+      const tempnum = latesttemp;
+      const humidnum = latesthumid;
+      const phnum = latestph;
+      const waterlevelnum = latestwaterlevel;
+
+      const presencenum = latestprecense;
+
+      document.getElementById('displaytemp').textContent = `${latesttemp.toFixed(2)} (c)`;
+      document.getElementById("displayhumid").textContent = `${latesthumid.toFixed(2)} (%)`;
+      document.getElementById('displayph').textContent = `${latestph.toFixed(2)} (ph)`;
+      document.getElementById("displaywaterlevel").textContent = `${latestwaterlevel.toFixed(2)} (ml)`;
+    }
+
+    async function renderCharts(){
+      const data = await datafetching();
+      const tempHumpCtx = document.getElementById('tempHumpChart').getContext('2d');
+      if (!tempHumpChart) {
+        console.log('Creating sounds chart');
+        tempHumpChart = new Chart(tempHumpCtx, {
+        type: 'bar',
+        data: {
+          labels: data.soundsData.map((_, index) => index + 1), 
+          datasets: [{
             label: 'Temperature (°C)',
-            data: [25, 27, 26],
-            backgroundColor: 'orange'
+            data: [data.temperature],
+            backgroundColor: 'orange',
+            fill: false,
+            tension: 0.1,
+            borderWidth: 1
           },
           {
             label: 'Humidity (%)',
-            data: [60, 65, 63],
-            backgroundColor: 'lightblue'
+            data: [data.humidity],
+            backgroundColor: 'blue',
+            fill: false,
+            tension: 0.1,
+            borderWidth: 1
+          }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: 'Time'
+                },
+                ticks: {
+                  stepSize: 1
+                }
+                },
+              y: {
+                title: {
+                  display: true,
+                  text: 'Status'
+                },
+                  beginAtZero: true
+                }
+            }
           }
-        ]
-      }
-    });
+        });
+      } else {
+          console.log('Updating temperature and humidity chart');
+          tempHumpChart.data.labels = data.timeData.map((_, index) => index + 1); // Update the labels
+          tempHumpChart.data.datasets[0].data = data.temperature;  // Update temperature data
+          tempHumpChart.data.datasets[1].data = data.humidity;  // Update humidity data
+          tempHumpChart.update();
+    }
 
-    const waterLevelChartCtx = document.getElementById('waterLevelChart').getContext('2d');
-    const waterLevelChart = new Chart(waterLevelChartCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Water Level', 'Remaining'],
-        datasets: [{
-          label: 'Water Level',
-          data: [75, 25],
-          backgroundColor: ['#36A2EB', '#FF6384']
-        }]
+    const waterlvlCtx = document.getElementById('waterlevelChart').getContext('2d');
+    if (!waterlevelChart) {
+      console.log('Creating water level chart');
+      waterlevelChart = new Chart(waterlvlCtx, {
+          type: 'doughnut',
+          data: {
+              labels:['Water Level', 'Remaining'],
+              datasets: [{
+                  label: 'Water Level (ml)',
+                  data: [100, data.waterLevel],
+                  backgroundColor: ['#36A2EB', '#FF6384'],
+              }]
+          },
+          options: {
+              responsive: true,
+              scales: {
+                  x: {
+                      title: {
+                          display: true,
+                          text: 'Counts'
+                      },
+                      ticks: {
+                          stepSize: 1
+                      }
+                  },
+                  y: {
+                      title: {
+                          display: true,
+                          text: 'Times'
+                      },
+                      beginAtZero: true
+                  }
+                }
+              }
+          });
+      } else {
+        console.log('Updating water level chart'); 
+        waterlevelChart.data.datasets[0].data = [100, data.waterLevel];
+        waterlevelChart.update();
+        }
+      const phCtx = document.getElementById('phChart').getContext('2d');
+      if (!phChart) {
+          console.log('Creating raindrop chart');
+          phChart = new Chart(phCtx, {
+              type: 'line',
+              data: {
+                  labels: data.rainData.map((_, index) => index + 1),
+                  datasets: [{
+                      label: 'ph Levels',
+                      data: data.pH,
+                      borderColor: 'rgba(75, 192, 192, 1)',
+                      backgroundColor: 'rgba(75, 192, 192, 02.)',
+                      fill: true,
+                      tension: 0.1
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  scales: {
+                      x: {
+                          title: {
+                              display: true,
+                              text: 'level'
+                          },
+                          ticks: {
+                              stepSize: 1
+                          }
+                      },
+                      y: {
+                          title: {
+                              display: true,
+                              text: 'time'
+                          },
+                          beginAtZero: true
+                      }
+                  }
+              }
+          });
+      } else {
+          console.log('Updating ph chart'); 
+          phChart.data.labels = data.data.pH.map((_, index) => index + 1);
+          phChart.data.datasets[0].data = data.data.pH;
+          phChart.update();
       }
-    });
+    }
+
+    window.onload = () => {
+      renderCharts(); 
+      setInterval(renderCharts, 1500); 
+    };
+
+    textdisplay();
+    setInterval(textdisplay, 1200);
   </script>
 </body>
 </html>
