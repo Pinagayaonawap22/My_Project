@@ -338,8 +338,12 @@
             margin-top: -3px;
         }
         #map {
-            height: 400px;
+            height: 600px;
             width: 100%;
+            margin-top: 17px;
+        }
+        #map:hover{
+            transform: scale(1.07);
         }
         #info {
             padding: 20px;
@@ -347,11 +351,13 @@
             justify-content: space-between;
         }
         .cardgps {
-            padding: 20px;
+            padding: 15px;
             background-color: white;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
             margin: 10px;
-            width: 60%;
+            margin-top: -25px;
+            width: 100%;
+            height: 95%;
             margin-left: -2px;
         }
     </style>
@@ -599,9 +605,11 @@
                 <header>
                     <h1>Activity 6: GPS Module with website</h1>
                 </header>
-                <div style="width: 100%; height: 100%; display: flex; flex-direction: row; position: relative;">
+                <div style="width: 100%; height: 100%; display: flex; position: relative;">
+                    <div id="map"></div>
+                    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
                     <div id="info">
-                        <div>
+                        <div style="margin-top: -25px; background-color: 'brown'">
                             <h5>Sound Sensor</h5>
                             <p>Distance value: <span id="displaydistanceact6">0 dB</span></p>
                             <canvas id="distancegpsChart"></canvas>
@@ -615,8 +623,6 @@
                             <button onclick="startTracking()">Start Tracking</button>
                             <button onclick="viewHistory()">View History</button>
                         </div>
-                        <div id="map"></div>
-                        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
                     </div>
                 </div>
              </div>
@@ -626,7 +632,6 @@
     </div> 
 
 <script>
-
         document.getElementById("toggleButton").addEventListener("click", function() {
             const leftDiv = document.getElementById("leftDiv");
             const rightDiv = document.getElementById("rightDiv");
@@ -681,18 +686,16 @@
         let latestlat = data.latitude;
         let latestlong = data.longitude;
         let latestalt = data.altitude;
-        let latesttime = data.time;
+        let latesttime = data.current_time;
 
         const distancevalue = data.distanceact6;
 
-        document.getElementById('displaydistanceact6').textContent = `${latestdist.toFixed(2)}`;
+        document.getElementById('displaydistanceact6').textContent = `${latestdist.toFixed(3)}`;
+        document.getElementById('displaylatitude').textContent = `${latestlat.toFixed(3)}`;
+        document.getElementById('displaylongitude').textContent = `${latestlong.toFixed(3)}`;
+        document.getElementById('displayaltitude').textContent = `${latestalt.toFixed(3)}`;
+        document.getElementById('displaytime').textContent = data.current_time;
 
-        if (distancevalue < 30) {
-            document.getElementById('displaylatitude').textContent = `${latestlat.toFixed(2)}`;
-            document.getElementById('displaylongitude').textContent = `${latestlong.toFixed(2)}`;
-            document.getElementById('displayaltitude').textContent = `${latestalt.toFixed(2)}`;
-            document.getElementById('displaytime').textContent = `${latesttime.toFixed(2)}`;
-        }
     }
 
     async function renderCharts() {
@@ -743,7 +746,7 @@
             });
         } else {
             console.log('Updating distance chart');
-            distancegpsChart.data.labels.push(data.time);
+            distancegpsChart.data.labels.push(data.distanceact6);
             distancegpsChart.data.datasets[0].data.push(Number(data.distanceact6));
             distancegpsChart.update();
         }
@@ -761,36 +764,27 @@
         let gpsalt = data.altitude;
         let gpsdistance = data.distanceact6;
 
-        // Set default to 0 if the distance is less than 30
-        if (gpsdistance < 30) {
-            gpslat = 0;
-            gpslong = 0;
-            gpsalt = 0;
-        }
-
-        // Check if map already exists
+       
         if (!map) {
-            // Initialize the map
-            map = L.map('map').setView([gpslat, gpslong], 13); // Default zoom level
+            
+            map = L.map('map').setView([gpslat, gpslong], 19); 
 
-            // Add OpenStreetMap tiles
+            
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
         }
 
-        // If marker doesn't exist, create it; otherwise, update its position
+        
         if (!marker) {
             marker = L.marker([gpslat, gpslong]).addTo(map);
         } else {
             marker.setLatLng([gpslat, gpslong]);
         }
 
-        // Update the map view and zoom level
         map.setView([gpslat, gpslong], 13);
-
-        // Bind popup with GPS information
+        
         marker.bindPopup(`<b>GPS Location</b><br>Latitude: ${gpslat}<br>Longitude: ${gpslong}`).openPopup();
     }
 
