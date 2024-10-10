@@ -55,32 +55,20 @@ def write_data_to_file(file_path, data):
         file.write(data)
         file.flush()
 
-def display_text(latitude, longitude):
+def display_text(latitude, longitude,altitude):
     try:
         with canvas(oled) as draw:
             formatted_lat = f"{latitude}"
             formatted_long = f"{longitude}"
+            formatted_alt = f"{altitude}"
 
-            draw.text((10, 10), f"Latitude: {formatted_lat}", fill="red")
-            draw.text((10, 30), f"Longitude: {formatted_long}", fill="red")
-
+            draw.text((10, 10), f"Latitude: {formatted_lat:1.f}", fill="red")
+            draw.text((10, 20), f"Longitude: {formatted_long:1.f}", fill="red")
+            draw.text((10, 30), f"Altitude: {formatted_alt:2.f}", fill="red")
+            
     except Exception as e:
         print(f"Error displaying text: {e}")
 
-def display_distance(distance, volume_distance):
-    try:
-        with canvas(oled) as draw:
-            formatted_DIST = f"{distance}"
-            formatted_DIST2 = f"{volume_distance}"
-
-            draw.text((10, 10), f"{formatted_DIST}", fill="blue")
-            draw.text((10, 30), f"{formatted_DIST2}", fill="blue")
-
-    except Exception as e:
-        print(f"Error displaying text: {e}")
-
-
-   
 def distance_data():
     GPIO.output(trig_pin, True)
     time.sleep(0.00001)
@@ -96,7 +84,7 @@ def distance_data():
     distanceSensor = ((pulse_Distance * 34300) / 2)
     
     if distanceSensor <= 10:
-        threading.Thread(target=buzzer_sensor, args=(5,)).start()
+        buzzer_sensor(0.5)
     else:
         buzzer_off()
 
@@ -127,12 +115,10 @@ def Gps_data():
 
     if distance < 30:
         write_data_to_file(FILE_PATH, f'{distance},{latitude},{longitude},{altitude},{current_time}\n')
-        display_text(latitude, longitude)
         counter += 1
-    else:  
-        volume_distance = ((distance / 1000) * 100)
-        display_distance("DISTANCE VALUE", volume_distance)
-
+        time.sleep(0.5)
+        
+    display_text(latitude, longitude, altitude)
     
     if counter >= 20:
         counter = 0
@@ -140,10 +126,10 @@ def Gps_data():
         with open(FILE_PATH, 'w') as file:
             pass 
 
-    return jsonify(distanceact6=distance, latitude=latitude, longitude=longitude, altitude=altitude, time=current_time)
+    return jsonify(distanceact6=distance, latitude=latitude, longitude=longitude, altitude=altitude, current_time=current_time)
 
 def run_flask():
-    app.run(host='0.0.0.0', port=5072, debug=True)
+    app.run(host='0.0.0.0', port=5081, debug=True)
 
 @app.route('/GPSfile.txt')
 def get_file_motion():
@@ -160,3 +146,4 @@ if __name__ == '__main__':
     gps_oled_thread.start()
 
     run_flask()
+
