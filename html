@@ -341,9 +341,10 @@
             height: 600px;
             width: 100%;
             margin-top: 17px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
         }
         #map:hover{
-            transform: scale(1.07);
+            transform: scale(1.02);
         }
         #info {
             padding: 20px;
@@ -353,12 +354,32 @@
         .cardgps {
             padding: 15px;
             background-color: white;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
             margin: 10px;
             margin-top: -25px;
             width: 100%;
             height: 95%;
             margin-left: -2px;
+        }
+        .gpsdistance {
+            margin-top: -25px;
+            background-color: #8b5a2b;
+            width: 100%;
+            height: 100%;
+        }
+        .act6{
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            position: relative;
+        }
+        .act6 h2{
+            font-family: Arial, Helvetica, sans-serif;
+            text-align: center;
+        }
+        .act6 p{
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 20px;
         }
     </style>
 </head>
@@ -605,12 +626,12 @@
                 <header>
                     <h1>Activity 6: GPS Module with website</h1>
                 </header>
-                <div style="width: 100%; height: 100%; display: flex; position: relative;">
+                <div class="act6">
                     <div id="map"></div>
                     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
                     <div id="info">
-                        <div style="margin-top: -25px; background-color: 'brown'">
-                            <h5>Sound Sensor</h5>
+                        <div class="gpsdistance">
+                            <h2>Distance Tracker</h2>
                             <p>Distance value: <span id="displaydistanceact6">0 dB</span></p>
                             <canvas id="distancegpsChart"></canvas>
                         </div>
@@ -663,47 +684,47 @@
             alert(`Status changed to: ${data.status}`);
         }
 
-    let distancegpsChart;
-    const buzzerstat = document.getElementById('colorbuzzer1');
+        let distancegpsChart;
+        const buzzerstat = document.getElementById('colorbuzzer1');
 
-    async function txtfetching() {
-        try {
-            const response = await fetch('/Gps_data');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+        async function txtfetching() {
+            try {
+                const response = await fetch('/Gps_data');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching data:', error);
             }
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching data:', error);
         }
-    }
 
-    async function textdisplay() {
-        const data = await txtfetching();
-        if (!data) return;
+        async function textdisplay() {
+            const data = await txtfetching();
+            if (!data) return;
 
-        let latestdist = data.distanceact6;
-        let latestlat = data.latitude;
-        let latestlong = data.longitude;
-        let latestalt = data.altitude;
-        let latesttime = data.current_time;
+            let latestdist = data.distanceact6;
+            let latestlat = data.latitude;
+            let latestlong = data.longitude;
+            let latestalt = data.altitude;
+            let latesttime = data.current_time;
 
-        const distancevalue = data.distanceact6;
+            const distancevalue = data.distanceact6;
 
-        document.getElementById('displaydistanceact6').textContent = `${latestdist.toFixed(3)}`;
-        document.getElementById('displaylatitude').textContent = `${latestlat.toFixed(3)}`;
-        document.getElementById('displaylongitude').textContent = `${latestlong.toFixed(3)}`;
-        document.getElementById('displayaltitude').textContent = `${latestalt.toFixed(3)}`;
-        document.getElementById('displaytime').textContent = data.current_time;
+            document.getElementById('displaydistanceact6').textContent = `${latestdist.toFixed(3)}`;
+            document.getElementById('displaylatitude').textContent = `${latestlat.toFixed(3)}`;
+            document.getElementById('displaylongitude').textContent = `${latestlong.toFixed(3)}`;
+            document.getElementById('displayaltitude').textContent = `${latestalt.toFixed(3)}`;
+            document.getElementById('displaytime').textContent = data.current_time;
 
-    }
-
-    async function renderCharts() {
-        const data = await txtfetching();
-        if (!data || data.distanceact6 === null) {
-            console.error('No data available to display');
-            return;
         }
+
+        async function renderCharts() {
+            const data = await txtfetching();
+            if (!data || data.distanceact6 === null) {
+                console.error('No data available to display');
+                return;
+            }
 
         const distanceCtx = document.getElementById('distancegpsChart').getContext('2d');
         if (!distancegpsChart) {
