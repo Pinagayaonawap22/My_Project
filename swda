@@ -62,7 +62,7 @@ def display_text(latitude, longitude):
             formatted_long = f"{longitude}"
 
             draw.text((10, 10), f"Latitude: {formatted_lat}", fill="red")
-            draw.text((10, 20), f"Longitude: {formatted_long}", fill="red")
+            draw.text((10, 30), f"Longitude: {formatted_long}", fill="red")
 
     except Exception as e:
         print(f"Error displaying text: {e}")
@@ -70,26 +70,15 @@ def display_text(latitude, longitude):
 def display_distance(distance, volume_distance):
     try:
         with canvas(oled) as draw:
-            formatted_dist = f"{distance}"
+            formatted_DIST = f"{distance}"
+            formatted_DIST2 = f"{volume_distance}"
 
-            draw.text((10, 10), f"Distance value: {formatted_dist}", fill="red")
-
-            bar_length = 100 
-            bar_height = 10  
-            x_start = 10      
-            y_start = 30     
-
-           
-            filled_length = int((volume_distance / 100) * bar_length)
-
-            
-            draw.rectangle([x_start, y_start, x_start + filled_length, y_start + bar_height], fill="green")
-
-            
-            draw.rectangle([x_start, y_start, x_start + bar_length, y_start + bar_height], outline="white")
+            draw.text((10, 10), f"{formatted_DIST}", fill="blue")
+            draw.text((10, 30), f"{formatted_DIST2}", fill="blue")
 
     except Exception as e:
         print(f"Error displaying text: {e}")
+
 
    
 def distance_data():
@@ -136,16 +125,16 @@ def Gps_data():
         except ValueError:
             print(f"Error parsing data: {data}")
 
-    if distance < 20:
+    if distance < 30:
         write_data_to_file(FILE_PATH, f'{distance},{latitude},{longitude},{altitude},{current_time}\n')
         display_text(latitude, longitude)
         counter += 1
     else:  
         volume_distance = ((distance / 1000) * 100)
-        display_distance(distance, volume_distance)
+        display_distance("DISTANCE VALUE", volume_distance)
 
     
-    if counter >= 50:
+    if counter >= 20:
         counter = 0
         print("Resetting file")
         with open(FILE_PATH, 'w') as file:
@@ -171,4 +160,3 @@ if __name__ == '__main__':
     gps_oled_thread.start()
 
     run_flask()
-
