@@ -1,146 +1,163 @@
-import RPi.GPIO as GPIO
-import time
 import serial
-import os
-import cv2
-import spidev
-from RPLCD.i2c import CharLCD
-from flask import Flask, render_template, send_from_directory, send_file, Response
+import time
+import RPi.GPIO as GPIO
+from flask import Flask, render_template, jsonify, send_from_directory
 import threading
+from datetime import datetime
+import os
+from luma.core.interface.serial import spi
+from luma.oled.device import ssd1306
+from luma.core.render import canvas
+from multiprocessing import Process
 
 app = Flask(__name__)
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
+buzzer_pin = 17
+trig_pin = 26
+echo_pin = 16
+
+GPIO.setup(buzzer_pin,GPIO.OUT)
+GPIO.setup(trig_pin, GPIO.OUT)
+GPIO.setup(echo_pin, GPIO.IN)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
-FILE_PATH = os.path.join(TEMPLATES_DIR, 'cognatefile.txt')
+FILE_PATH = os.path.join(TEMPLATES_DIR, 'GPSfile.txt')
+
+spi_serial = spi(device=0, port=0)
+oled = ssd1306(spi_serial, rotate=2)
+oled.command(0xA0)
+oled.command(0xC8)
+
+try:
+    arduino = serial.Serial('/dev/ttyUSB1', 9600, timeout=1)
+    arduino.flush()
+    print("Serial connection established.")
+except serial.SerialException as e:
+    print(f"Error Opening port: {e}")
+    exit()
+
+def buzzer_on():
+    GPIO.output(buzzer_pin,GPIO.HIGH)
+    
+def buzzer_off():
+    GPIO.output(buzzer_pin, GPIO.LOW)
+    
+def buzzer_sensor(duration):
+    GPIO.output(buzzer_pin, GPIO.HIGH)
+    time.sleep(duration)
+    GPIO.output(buzzer_pin, GPIO.LOW)
 
 def write_data_to_file(file_path, data):
     with open(file_path, 'a') as file:
         file.write(data)
         file.flush()
 
-relay_pins = [17, 27, 22, 23]
-# relay 0 is led light
-# relay 1 is aircon
-# relay 2 is up pump
-# relay 3 is down pump
+def display_text(latitude, longitude):
+    try:
+        with canvas(oled) as draw:
+            formatted_lat = f"{latitude}"
+            formatted_long = f"{longitude}"
 
-for pin in relay_pins:
-    GPIO.setup(pin, GPIO.OUT)
+            draw.text((10, 10), f"Latitude: {formatted_lat}", fill="red")
+            draw.text((10, 20), f"Longitude: {formatted_long}", fill="red")
 
-#lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, cols=20, rows=4)
+    except Exception as e:
+        print(f"Error displaying text: {e}")
 
-try:
-    arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
-    arduino.flush()
-    print("Serial connection established.")
-except serial.SerialException as e:
-    print(f"Error opening port: {e}")
-    exit()
+def display_distance(distance, volume_distance):
+    try:
+        with canvas(oled) as draw:
+            formatted_dist = f"{distance}"
 
-def ledlight(relay_channel, duration):
-    GPIO.output(relay_pins[0], GPIO.HIGH)
-    GPIO.output(relay_pins[1], GPIO.LOW)
-    print(f"Relay {relay_channel} activated for {duration} seconds.")
-    time.sleep(duration)
-    GPIO.output(relay_pins[0], GPIO.LOW)
-    GPIO.output(relay_pins[1], GPIO.HIGH)
+            draw.text((10, 10), f"Distance value: {formatted_dist}", fill="red")
 
-def aircon(relay_channel1, duration1):
-    GPIO.output(relay_pins[1], GPIO.HIGH)
-    print(f"Relay {relay_channel1} activated for {duration1} seconds.")
-    time.sleep(duration1)
-    GPIO.output(relay_pins[1], GPIO.LOW)
+            bar_length = 100 
+            bar_height = 10  
+            x_start = 10      
+            y_start = 30     
 
-def main_system():
-    print(f"Bytes waiting: {arduino.in_waiting}")
-    if arduino.in_waiting > 0:
-        arduinodata = arduino.readline().decode('utf-8').strip()
-        print(f"Raw data from Arduino: {arduinodata}")
+           
+            filled_length = int((volume_distance / 100) * bar_length)
 
-        # Handle error and empty data
-        if arduinodata.startswith('Error') or arduinodata == ',':
-            print("Received error from Arduino or empty data.")
-            return
-
-        data_parts = arduinodata.split(',')
-
-        try:
-            temp, humid, water, pHlevel, waterlevel = map(float, data_parts)
             
-            print(f"Temperature: {temp}")
-            print(f"Humidity: {humid}")
-            print(f"Water level: {water}")
-            print(f"pH level: {pHlevel}")
-            print(f"Water level: {waterlevel}")
+            draw.rectangle([x_start, y_start, x_start + filled_length, y_start + bar_height], fill="green")
 
-            handle_DHT(temp, humid)
-            handle_watercontainer(water)
-            handle_phlevel(pHlevel)
+            
+            draw.rectangle([x_start, y_start, x_start + bar_length, y_start + bar_height], outline="white")
 
-            write_data_to_file(FILE_PATH, f'{temp},{humid},{water},{pHlevel},{waterlevel}\n') 
-            #lcd.clear()
-            #lcd.write_string(f"Temperature: {temp:.2f} C")
-            # lcd.cursor_pos = (1, 0)
-            # lcd.write_string(f"Humidity: {humid} %")
-            # lcd.cursor_pos = (2, 0)
-            # lcd.write_string(f"pH level: {pHlevel}")
-            # lcd.cursor_pos = (3, 0)
-            # lcd.write_string(f"Water level: {waterlevel:.2f} cm")
+    except Exception as e:
+        print(f"Error displaying text: {e}")
 
-            txtcount += 1
+   
+def distance_data():
+    GPIO.output(trig_pin, True)
+    time.sleep(0.00001)
+    GPIO.output(trig_pin, False)
 
-            if txtcount >= 20:
-                txtcount = 0
-                print("txt file reset")
-                with open(FILE_PATH, 'w') as file:
-                    pass
-
-            time.sleep(2)
-        except ValueError:
-            print("Fetching data error")
+    while GPIO.input(echo_pin) == GPIO.LOW:
+        pulseObject = time.time()
+    while GPIO.input(echo_pin) == GPIO.HIGH:
+        pulseNone = time.time()
+        
+    pulse_Distance = pulseNone - pulseObject
+    
+    distanceSensor = ((pulse_Distance * 34300) / 2)
+    
+    if distanceSensor <= 10:
+        threading.Thread(target=buzzer_sensor, args=(5,)).start()
     else:
-        print("No data from Arduino")
+        buzzer_off()
 
-def handle_DHT(temp, humid):
-    if temp < 11:
-        relay_thread = threading.Thread(target=ledlight, args=(relay_pins[0], 360))
-        relay_thread.start()
-
-    if temp > 27:
-        relay_thread = threading.Thread(target=aircon, args=(relay_pins[1], 360))
-        relay_thread.start()
-    elif 12 <= temp <= 26:
-        GPIO.output(relay_pins[1], GPIO.HIGH)
-
-    if humid > 75:
-        GPIO.output(relay_pins[1], GPIO.LOW)
-    elif humid < 49:
-        GPIO.output(relay_pins[1], GPIO.HIGH)
-
-def handle_watercontainer(water):
-    if water == 1:
-        print("No water, need to fill immediately")
-
-def handle_phlevel(pHlevel):
-    if pHlevel > 6.50:
-        GPIO.output(relay_pins[3], GPIO.HIGH)
-        GPIO.output(relay_pins[2], GPIO.LOW)
-    elif pHlevel < 5.40:
-        GPIO.output(relay_pins[3], GPIO.LOW)
-        GPIO.output(relay_pins[2], GPIO.HIGH)
-
-try:
-    while True:
-        main_system()
-
-except KeyboardInterrupt:
-    print("Exiting...")
-    GPIO.cleanup()
-
+    return round(distanceSensor, 2)
+     
 @app.route('/')
 def index():
-    return render_template('cognatesite.html')
+    return render_template('index1.html')
+
+@app.route('/Gps_data')
+def Gps_data():
+    counter = 0
+    distance =distance_data()
+    current_time = datetime.now()
+
+    if arduino.in_waiting > 0: 
+        data = arduino.readline().decode('utf-8').strip() 
+        try:
+            latitude, longitude, altitude  = map(int, data.split(","))
+            print(f"\latitude: {latitude}, longitude: {longitude}, altitude: {altitude}", end='')
+                
+        except ValueError:
+            print(f"\rError parsing data: {data}", end='')
+
+    if distance < 20:
+        write_data_to_file(FILE_PATH, f'{distance},{latitude},{longitude},{altitude},{current_time}\n')
+        display_text(latitude, longitude)
+        counter += 1
+    else:  
+        volume_distance = ((distance / 1000) * 100)
+        display_distance(distance, volume_distance)
+
+    
+    if counter >= 50:
+        counter = 0
+        print("Resetting file")
+        with open(FILE_PATH, 'w') as file:
+            pass 
+
+    return jsonify(distanceact6=distance, latitude=latitude, longitude=longitude, altitude=altitude, time=current_time)
+
+def run_flask():
+    app.run(host='0.0.0.0', port=5066, debug=True)
+
+@app.route('/GPSfile.txt')
+def get_file_motion():
+    return send_from_directory(TEMPLATES_DIR, 'GPSfile.txt')
+
+if __name__ == '__main__':
+    Gps_process = Process(target=Gps_data)
+    Gps_process.start()
+    run_flask()
+
