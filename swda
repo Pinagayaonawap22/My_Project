@@ -32,7 +32,7 @@ oled.command(0xA0)
 oled.command(0xC8)
 
 try:
-    arduino = serial.Serial('/dev/ttyUSB1', 9600, timeout=1)
+    arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
     arduino.flush()
     print("Serial connection established.")
 except serial.SerialException as e:
@@ -120,17 +120,21 @@ def index():
 @app.route('/Gps_data')
 def Gps_data():
     counter = 0
-    distance =distance_data()
+    distance = distance_data()
     current_time = datetime.now()
 
+    latitude = None
+    longitude = None
+    altitude = None
+    
+    print(f"Distance: {distance}")
     if arduino.in_waiting > 0: 
-        data = arduino.readline().decode('utf-8').strip() 
+        data = arduino.readline().decode('utf-8').strip()
         try:
-            latitude, longitude, altitude  = map(int, data.split(","))
-            print(f"\latitude: {latitude}, longitude: {longitude}, altitude: {altitude}", end='')
-                
+            latitude, longitude, altitude = map(float, data.split(","))
+            print(f"latitude: {latitude}, longitude: {longitude}, altitude: {altitude}")
         except ValueError:
-            print(f"\rError parsing data: {data}", end='')
+            print(f"Error parsing data: {data}")
 
     if distance < 20:
         write_data_to_file(FILE_PATH, f'{distance},{latitude},{longitude},{altitude},{current_time}\n')
@@ -150,14 +154,21 @@ def Gps_data():
     return jsonify(distanceact6=distance, latitude=latitude, longitude=longitude, altitude=altitude, time=current_time)
 
 def run_flask():
-    app.run(host='0.0.0.0', port=5066, debug=True)
+    app.run(host='0.0.0.0', port=5072, debug=True)
 
 @app.route('/GPSfile.txt')
 def get_file_motion():
     return send_from_directory(TEMPLATES_DIR, 'GPSfile.txt')
 
+def run_gps_oled():
+    with app.app_context():
+        while True:
+            Gps_data()
+            time.sleep(1)
+            
 if __name__ == '__main__':
-    Gps_process = Process(target=Gps_data)
-    Gps_process.start()
+    gps_oled_thread = threading.Thread(target=run_gps_oled)
+    gps_oled_thread.start()
+
     run_flask()
 
