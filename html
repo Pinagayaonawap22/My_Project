@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EMBEDDED ACTIVITIES WEBSITE</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         * {
             box-sizing: border-box;
@@ -603,15 +604,15 @@
                     <div id="info">
                         <div>
                             <h5>Sound Sensor</h5>
-                            <p>Distance value: <span id="displaysounds">0 dB</span></p>
+                            <p>Distance value: <span id="displaydistanceact6">0 dB</span></p>
                             <canvas id="distancegpsChart"></canvas>
                         </div>
                         <div class="cardgps">
                             <h2>Track Data</h2>
-                            <p>Latitude: <span id="statusSmoke"></span></p>
-                            <p>Longitude: <span id="statusSmoke"></span></p>
-                            <p>Altitude: <span id="statusSmoke"></span></p>
-                            <p>Timestamp: <span id="statusSmoke"></span></p>
+                            <p>Latitude: <span id="displaylatitude"></span></p>
+                            <p>Longitude: <span id="displaylongitude"></span></p>
+                            <p>Altitude: <span id="displayaltitude"></span></p>
+                            <p>Timestamp: <span id="displaytime"></span></p>
                             <button onclick="startTracking()">Start Tracking</button>
                             <button onclick="viewHistory()">View History</button>
                         </div>
@@ -657,7 +658,6 @@
             alert(`Status changed to: ${data.status}`);
         }
 
-    let map;
     let distancegpsChart;
     const buzzerstat = document.getElementById('colorbuzzer1');
 
@@ -725,7 +725,7 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Time'
+                                text: 'Times'
                             },
                             ticks: {
                                 stepSize: 1
@@ -749,6 +749,9 @@
         }
     }
 
+    let map;
+    let marker;
+
     async function initMap() {
         const data = await txtfetching();
         if (!data) return;
@@ -758,38 +761,46 @@
         let gpsalt = data.altitude;
         let gpsdistance = data.distanceact6;
 
+        // Set default to 0 if the distance is less than 30
         if (gpsdistance < 30) {
             gpslat = 0;
             gpslong = 0;
             gpsalt = 0;
         }
 
+        // Check if map already exists
         if (!map) {
-            map = L.map('map').setView([gpslat, gpslong], 13); // Default zoom to 13
+            // Initialize the map
+            map = L.map('map').setView([gpslat, gpslong], 13); // Default zoom level
 
             // Add OpenStreetMap tiles
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-        } else {
-            map.setView([gpslat, gpslong], gpsalt);
         }
 
-        // Add a marker for the GPS coordinates
-        if (!map.hasLayer(marker)) {
-            var marker = L.marker([gpslat, gpslong]).addTo(map);
-            marker.bindPopup(`<b>GPS Location</b><br>Latitude: ${gpslat}<br>Longitude: ${gpslong}`).openPopup();
+        // If marker doesn't exist, create it; otherwise, update its position
+        if (!marker) {
+            marker = L.marker([gpslat, gpslong]).addTo(map);
+        } else {
+            marker.setLatLng([gpslat, gpslong]);
         }
+
+        // Update the map view and zoom level
+        map.setView([gpslat, gpslong], 13);
+
+        // Bind popup with GPS information
+        marker.bindPopup(`<b>GPS Location</b><br>Latitude: ${gpslat}<br>Longitude: ${gpslong}`).openPopup();
     }
 
     window.onload = () => {
         renderCharts();
         textdisplay();
-        initMap();
-        setInterval(renderCharts, 1500);
-        setInterval(textdisplay, 900);
-        setInterval(initMap, 900);
+        initMap(); // Initialize the map on page load
+        setInterval(renderCharts, 1500); // Update charts every 1.5 seconds
+        setInterval(textdisplay, 900); // Update displayed text every 0.9 seconds
+        setInterval(initMap, 900); // Update map every 0.9 seconds
     };
 </script>
     
