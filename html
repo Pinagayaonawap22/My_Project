@@ -1,193 +1,828 @@
-import serial
-import time
-import RPi.GPIO as GPIO
-from flask import Flask, render_template, jsonify, send_from_directory
-import threading
-from datetime import datetime
-import os
-from luma.core.interface.serial import spi
-from luma.oled.device import ssd1306
-from luma.core.render import canvas
-from multiprocessing import Process
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email.mime.text import MIMEText
-from email import encoders
-
-app = Flask(__name__)
-
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
-buzzer_pin = 17
-led = 21
-trig_pin = 26
-echo_pin = 16
-
-GPIO.setup(buzzer_pin,GPIO.OUT)
-GPIO.setup(led,GPIO.OUT)
-GPIO.setup(trig_pin, GPIO.OUT)
-GPIO.setup(echo_pin, GPIO.IN)
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
-FILE_PATH = os.path.join(TEMPLATES_DIR, 'GPSfile.txt')
-FILE_PATH1 = os.path.join(TEMPLATES_DIR, 'status.txt')
-
-spi_serial = spi(device=0, port=0)
-oled = ssd1306(spi_serial, rotate=2)
-oled.command(0xA0)
-oled.command(0xC8)
-
-try:
-    arduino = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
-    arduino.flush()
-    print("Serial connection established.")
-except serial.SerialException as e:
-    print(f"Error Opening port: {e}")
-    exit()
-
-    
-def buzzer_off():
-    GPIO.output(buzzer_pin, GPIO.LOW)
-    
-def buzzer_sensor(duration):
-    GPIO.output(buzzer_pin, GPIO.HIGH)
-    time.sleep(duration)
-    GPIO.output(buzzer_pin, GPIO.LOW)
-
-def write_data_to_file(file_path, data):
-    with open(file_path, 'a') as file:
-        file.write(data)
-        file.flush()
-
-def send_location_email(altitude, latitude, longitude, timestamp):
-    sender_email = "encoderactivity@gmail.com"
-    receiver_email = "pinagayaonawap22@gmail.com"
-    password = "wfaf mumd yskg xwvx"
-    
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = receiver_email
-    msg['Subject'] = "Tracker: Location Detected"
-
-    body = f"Warning!\n\nLocation data detected:\nAltitude: {altitude} meters\nLatitude: {latitude} degrees\nLongitude: {longitude} degrees\nTime: {timestamp}\n\nTrack the location immediately."
-    msg.attach(MIMEText(body, 'plain'))
-
-    try:
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(sender_email, password)
-            server.send_message(msg)
-        print("Email sent successfully with location data!")
-    except Exception as e:
-        print(f"Failed to send email: {e}")
-
-def display_text(latitude, longitude):
-    try:
-        with canvas(oled) as draw:
-            formatted_lat = f"{latitude}"
-            formatted_long = f"{longitude}"
-
-            draw.text((10, 10), f"Latitude: {formatted_lat}", fill="red")
-            draw.text((10, 30), f"Longitude: {formatted_long}", fill="red")
-            
-    except Exception as e:
-        print(f"Error displaying text: {e}")
-
-def distance_data():
-    GPIO.output(trig_pin, True)
-    time.sleep(0.00001)
-    GPIO.output(trig_pin, False)
-
-    while GPIO.input(echo_pin) == GPIO.LOW:
-        pulseObject = time.time()
-    while GPIO.input(echo_pin) == GPIO.HIGH:
-        pulseNone = time.time()
-        
-    pulse_Distance = pulseNone - pulseObject
-    
-    distanceSensor = ((pulse_Distance * 34300) / 2)
-    
-    if distanceSensor <= 10:
-        buzzer_sensor(3)
-        GPIO.output(led, GPIO.HIGH)
-    else:
-        GPIO.output(led, GPIO.LOW)
-        buzzer_off()
-
-    return round(distanceSensor, 2)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMBEDDED ACTIVITIES WEBSITE</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: antiquewhite;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            transition: width 0.7s ease;
+        }
+        .MainContent {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            grid-gap: 10px;
+            justify-content: center;
+            align-items: center;
+            height: 99%;
+            padding: 10px;
+        }
+        #leftDiv.visible {
+            width: 10%;
+        }
+        #leftDiv {
+            display: grid;
+            background-color: #8b5a2b;
+            width: 0%;
+            height: 100%;
+            position: relative;
+            gap: 2px;
+            transition: width 0.5s ease;
+        }
+        #rightDiv {
+            display: flex;
+            background-color: wheat;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            gap: 30px;
+        }
+        #rightDiv.expanded {
+            width: 90%;
+        }
+        button {
+            background-color: white;
+           font-weight: bold;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.5s ease;
+        }
+        #toggleButton.center {
+            position: absolute;
+            top: 50%;
+            left: 0.5%;
+            transform: translate(-50%, -50%) rotate(90deg);
+        }
+        .act1_title {
+            text-align: center;
+            font-size: 50px;
+        }
+        .texthere {
+            font-size: 25px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        #tempHumidityChart, #distanceChart {
+            width: 100%;
+            height: 450px;
+            border: 1px solid;
+        }
+        .acttab {
+            display: none;
+        }
+        .acttab.active {
+            width: 95%;
+            margin: 30px auto;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        #tempHumidityChart {
+            width: 95%;
+            height: 450px;
+            border: 1px solid;       
+        } 
+        #distanceChart {
+            width: 95%;
+            height: 450px;
+            border: 1px solid; 
+        }
+        #distancegpsChart {
+            width: 55%;
+            height: 350px;
      
-@app.route('/')
-def index():
-    return render_template('index1.html')
+        }
+        #motionChart{
+            width: 50%;
+            height: 450px;
+            border: 1px solid;   
+        }
+        #smokeChart{
+            width: 100%;
+            height: 300px;
+           
+        }
+        #vibrationChart{
+            width: 100%;
+            height: 300px; 
+        }
+        #soundChart{
+            width: 100%;
+            height: 250px; 
+        }
+        #rainChart{
+            width: 100%;
+            height: 250px; 
+        }
+        #recentImage {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+        }
+        .sensor-card {
+            background-color: white;
+            height: 560px;
+            width: 45%;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin-bottom: -40px;
+        }
+        header {
+            background-color: #8b5a2b; 
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            text-align: center;
+            justify-items: center;
+            margin-top: -20px;
+            font-size: 1em;
+            letter-spacing: 1px;
+            width: 100%;
+            height: 50px;
+        }
+        header h1{
+            margin-top: -10px;
+            font-size: 30px;
+        }
+        .sensor-header {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #8b5a2b; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sensor-status {
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 1.5em;
+            font-weight: bold;
+            width:100%;
+            height: 5%;
+            text-align: left; 
+            display: flex;
+         
+            align-items: center;
+        }
 
-@app.route('/Gps_data')
-def Gps_data():
-    counter = 0
-    distance = distance_data()
-    current_time = datetime.now()
+        .sensor-info {
+            margin: 10px 0;
+            font-size: 1.1em;
+            margin-top: -50px;
 
-    latitude = None
-    longitude = None
-    altitude = None
-    
-    print(f"Distance: {distance}")
-    if arduino.in_waiting > 0: 
-        data = arduino.readline().decode('utf-8').strip()
-        try:
-            latitude, longitude, altitude = map(float, data.split(","))
-            print(f"latitude: {latitude} | longitude: {longitude} | altitude: {altitude}")
-        except ValueError:
-            print(f"Error parsing data: {data}")
+        }
+        .database-button, .control-button {
+            background-color: #8b5a2b; 
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
 
-    if distance < 10:
-        write_data_to_file(FILE_PATH, f'{distance},{latitude},{longitude},{altitude},{current_time}\n')
-        counter += 1
-        try:
-            send_location_email(altitude, latitude, longitude)
-            time.sleep(1)
-        except Exception as e:
-            print(f"Failed to send email: {e}")
-        time.sleep(0.5)
+        .database-button:hover, .control-button:hover {
+            background-color: red; 
+        }
+        #colorbuzzer1{
+            width: 50px;
+            display: flex; 
+            justify-content: center;
+            margin-right: 30px;
+            border-width: 50px;
+        }
+        .optionbutton{
+            font-family: roboto, Times;
+            font-size: 100%;
+            font-weight: bold;
+        }
+        .colorstatus{
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+                table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse:separate;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .act5header {
+            background-color: #007BFF;
+            color: white;
+            padding: 15px;
+            border-radius: 10px; 
+            width: 100%;
+            max-width: 900px; 
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
+            margin: 0 auto; 
+            display: flex;
+            align-items: center;
+            margin-top: -10px;
+            margin-bottom: 10px;
+        }
+        .act5main{
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: flex-start;
+            width: 1000%;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            flex-wrap: wrap;
+        }
+        .act5sec{
+            background-color: #f0f8ff;
+            border-radius: 10px;
+            padding: 10px;
+            width: 45%;
+            min-width: 200px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            transition: transform 0.8s ease;
+            margin-bottom: -30px;
+        }
+        .act5sec h5 {
+            font-size: 1.5em;
+            color: #007BFF;
+            margin-bottom: 5px;
+            margin-top: -3px;
+        }
+        .act5sec:hover {
+            transform: scale(1.07);
+        }   
+        .act5main h7{
+            font-size: 40px;
+            width: 100%;
+            max-width: 900px; 
+            text-align: center;
+            font-family: 'Raleway', sans-serif;
+            font-weight: bold;
+            margin-top: -10px;
+            margin-bottom: 4px;
+        }
+        .act5main h7:hover{
+            transform: scale(1.07);
+        }
+        .act5sec p {
+            font-size: 1.2em;
+            color: #333;
+        }
+        .databasebuttonact5{
+            background-color:  #007BFF; 
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .statusact5{
+            padding: 4px 6px;
+            border-radius: 5px;
+            font-size: 1.0em;
+            font-weight: bold;
+            width:100%;
+            height: 5%;
+            text-align: left; 
+            display: flex;
+            align-items: center;  
+            margin-top: -3px;
+        }
+        #map {
+            height: 640px;
+            width: 100%;
+            margin-top: 17px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+        }
+        #map:hover{
+            transform: scale(1.02);
+            border-radius: 10px;
+        }
+        #info {
+            padding: 20px;
+            display: grid;
+            justify-content: space-between;
+        }
+        .cardgps {
+            padding: 15px;
+            background-color: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            margin: 10px;
+         
+            width: 100%;
+            height: 95%;
+            margin-left: -2px;
+        }
+        .gpsdistance {
+            padding: 15px;
+            background-color: white;
+            width: 100%;
+            height: 100%;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+        }
+        .act6{
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            position: relative;
+        }
+        .act6 h2{
+            font-family: Arial, Helvetica, sans-serif;
+            text-align: center;
+            margin-top: -10px;
+        }
         
-    display_text(latitude, longitude)
+        .act6 p{
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="leftDiv">
+            <div class="MainContent">
+                <button class="optionbutton" onclick="tabControl(1)">Activity 1</button>
+                <button class="optionbutton" onclick="tabControl(2)">Activity 2</button>
+                <button class="optionbutton" onclick="tabControl(3)">Activity 3</button>
+                <button class="optionbutton" onclick="tabControl(4)">Activity 4</button>
+                <button class="optionbutton" onclick="tabControl(5)">Activity 5</button>
+                <button class="optionbutton" onclick="tabControl(6)">Activity 6</button>
+                <button class="optionbutton" onclick="tabControl(7)">Activity 7</button>
+                <button class="optionbutton" onclick="tabControl(8)">Activity 8</button>
+                <button class="optionbutton" onclick="tabControl(9)">Activity 9</button>
+                <button class="optionbutton" onclick="tabControl(10)">Activity 10</button>
+                <button class="optionbutton" onclick="tabControl(11)">Members</button>
+            </div>
+        </div>
+        <div id="rightDiv">
+            <div>
+                <button id="toggleButton" class="center" style="border: none; background-color: #8b5a2b; color: black; font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">
+                    Main Content
+                </button>
+            </div>
+            <div id="tabOpen1" class="acttab ">
+                <h1 class="act1_title">Activity 1: Temperature & Humidity sensor with Webserver</h1>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
+                    <div style="text-align: left;">
+                        <p class="texthere">Temperature: <span id="temptext" class="datahere">--</span> <span id="tempUnit" class="datahere">C</span></p>
+                        <p class="texthere">Humidity: <span id="humiditytext" class="datahere">--</span> %</p>
+                        <p class="texthere">Highest Temperature: <span id="highestTemp" class="datahere">--</span> <span id="tempUnit" class="datahere"></span></p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
+                        <p style="margin: 0;">Buzzer Status:</p>
+                        <div id="colorbuzzer">
+                            <img src="https://i.imghippo.com/files/6fNBA1725347941.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
+                        </div>
+                    </div>
+                </div>
+                <canvas id="tempHumidityChart"></canvas>
+                <div class="ChartPart">
+                    <button id="toggleUnitButton" class="buttonstyle">Switch to Fahrenheit</button>
+                </div>
+            </div>
+            <div id="tabOpen2" class="acttab">
+                <h1 class="act1_title">Activity 2: Distance Sensor with Webserver</h1>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
+                    <div style="text-align: left;">
+                        <p class="texthere">First sensor: <span id="distance1" class="datahere">--</span> cm</p>
+                        <p class="texthere">Second sensor: <span id="distance2" class="datahere">--</span> cm</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
+                        <p style="margin: 0;">Buzzer Status:</p>
+                        <div id="colorbuzzer1">
+                            <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
+                        </div>
+                    </div>
+                </div>
+                <canvas id="distanceChart"></canvas>
+            </div>
+             <div id="tabOpen3" class="acttab">
+                <h1 class="act1_title">Activity 3: Motion Sensor and Rasp Camera with Webserver</h1>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: -30px;">
+                    <div style="text-align: left;">
+                        <p class="texthere">Motion Detection: <span id="PirText" class="datahere">--</span></p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; padding: 10px;">
+                        <p style="margin: 0;">Buzzer Status:</p>
+                        <div id="colorbuzzer1">
+                            <img src="https://i.imghippo.com/files/bmspu1725442654.png" alt="Buzzer Status" style="width: 110px; vertical-align: middle; margin-right: 20px;">
+                        </div>
+                    </div>
+                </div>
+                <div style="justify-items: center; align-items: center; position: relative; display: flex; width: 100%; height: 65%;">
+                    <div style="height: 100%; width: 50%;">
+                        
+                    </div>
+                    <div style="display: grid; justify-content:center; height: 100%; width: 50%;">
+                        <h1> CAPTURED IMAGE</h1>
+                      
+                       
     
-    if counter >= 20:
-        counter = 0
-        print("Resetting file")
-        with open(FILE_PATH, 'w') as file:
-            pass 
+                    </div>
+                </div>
+             </div>
+             <div id="tabOpen4" class="acttab"> 
+                <header>
+                    <p style="text-align: center; margin-top: -0.1px;"> Activity 4: GAS AND VIBRATION SENSOR WITH WEBSITE</p>
+                </header>
+                <div class="sensor-card">
+                    <div class="sensor-header">
+                        <p style="margin-top: -2%; font-size: 40px;"> Smoke Sensor </p>
+                        <div id="colorbuzzer1">
+                            <img src="https://i.imghippo.com/files/UtVBE1727069002.png" alt="Buzzer Status" style="width: 80px; ">
+                        </div>
+                    </div>
+                    <div class="sensor-info">
+                        <p>Smoke Level: <span id="displaysmoke">0.00 ppm</span></p>
+                    </div>
+                    <canvas id="smokeChart"></canvas>
 
-    return jsonify(distanceact6=distance, latitude=latitude, longitude=longitude, altitude=altitude, current_time=current_time)
+                    <div class="sensor-status" id="statusDisplay1">
+                        <p>Status: <span id="statusSmoke"></span></p>
+                    </div>
+                        <button type="submit">Toggle Smoke Sensor</button>
+                </div>
+                
+                <div class="sensor-card">
+                    <div class="sensor-header ">
+                        <p style="margin-top: -2%; font-size: 40px;">Earthquake Sensor</p>
+                        <div id="colorbuzzer1">
+                            <img src="https://i.imghippo.com/files/F28121727068937.png" alt="Buzzer Status" style="width: 80px; ">
+                        </div>
+                    </div>
+                    <div class="sensor-info">
+                         <p>Vibration Level: <span id="displayvibration">0.00 g</span></p>
+                    </div>
+                    <canvas id="vibrationChart"></canvas>
 
-def run_flask():
-    app.run(host='0.0.0.0', port=5086, debug=True)
+                    <div class="sensor-status" id="statusDisplay">
+                        <p>Status: <span id="statusVibration">No activity</span></p>
+                    </div>
+                    <button class="database-button" onclick="toggleVibration()"> Vibration Sensor button</button>
+                </div>
 
-@app.route('/GPSfile.txt')
-def get_file_motion():
-    return send_from_directory(TEMPLATES_DIR, 'GPSfile.txt')
+                <div style="text-align: center; margin-top: 40px;">
+                    <button class="database-button" onclick="tabControl(13)">
+                        View Database
+                    </button>
+                </div>
+             </div>
+             <div id = "tabOpen13" class="acttab">
+                <div style="text-align: center; display: grid; justify-content: center; align-items: center; height: 100%;">
+                    <h1>Sensor Data</h1>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Smoke Value</th>
+                                <th>Vibration Status</th>
+                                <th>Smoke Buzzer</th>
+                                <th>Vibration Buzzer</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if data %}
+                                {% for row in data[:10] %}  {# Display only the first 10 rows #}
+                                <tr>
+                                    <td>{{ row[0] }}</td>
+                                    <td>{{ row[1] }}</td>
+                                    <td>{{ row[2] }}</td>
+                                    <td>{{ row[3] }}</td>
+                                    <td>{{ row[4] }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5">Click "Refresh Data" to display the latest sensor record.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <form method="POST" style="display: flex; align-items: center; justify-content: center;">
+                        <button type="submit">Refresh Data</button>
+                    </form>
+                </div>
+             </div>
 
-def run_gps_oled():
-    with app.app_context():
-        while True:
-            Gps_data()
-            time.sleep(1)
+             <div id="tabOpen5" class="acttab">
+                <header class="act5header">
+                    <h4>Sensor Monitor: Sounds and Raindrop Detection</h4>
+                </header>
+                <div class="act5main">
+                    <h7>Wether today: <span id="weather-status"> Sunny day</span></h7>
 
-current_status = "inactive"
-@app.route('/toggle_status', methods=['POST'])
-def toggle_status():
-    global current_status
- 
-    current_status = "active" if current_status == "inactive" else "inactive"
+                    <div class="act5sec">
+                      <h5>Sound Sensor</h5>
+                      <p>Sounds Level: <span id="displaysounds">0 dB</span></p>
+                      <canvas id="soundChart"></canvas>
+                      <div class="statusact5" id="statusDisplay">
+                        <p>Status: <span id="statussound">No activity</span></p>
+                      </div>
+                    </div>
+                    
+                    <div class="act5sec">
+                      <h5>Raindrop Sensor</h5>
+                      <p>Rain Count: <span id="displayrain">0 Rd</span></p>
+                      <canvas id="rainChart"></canvas>
+                      <div class="statusact5" id="statusDisplay">
+                        <p>Status: <span id="statusrain">No activity</span></p>
+                      </div>
+                    </div>
 
-    with open(FILE_PATH1, 'w') as file:
-        file.write(current_status)
-    return jsonify(status=current_status)
-      
-if __name__ == '__main__':
-    gps_oled_thread = threading.Thread(target=run_gps_oled)
-    gps_oled_thread.start()
+                    <div style="text-align: center; margin-top: 40px;">
+                        <button class="databasebuttonact5" onclick="tabControl(14)">
+                            View Database
+                        </button>
+                        <button type="submit1">Toggle Smoke Sensor</button>
+                    </div>
 
-    run_flask()
+                </div>
+             </div>
 
+             <div id = "tabOpen14" class="acttab">
+                <div style="text-align: center; display: grid; justify-content: center; align-items: center; height: 100%;">
+                    <h1>Sensor Data</h1>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Smoke Value</th>
+                                <th>Vibration Status</th>
+                                <th>Smoke Buzzer</th>
+                                <th>Vibration Buzzer</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if data %}
+                                {% for row in data[:10] %}  {# Display only the first 10 rows #}
+                                <tr>
+                                    <td>{{ row[0] }}</td>
+                                    <td>{{ row[1] }}</td>
+                                    <td>{{ row[2] }}</td>
+                                    <td>{{ row[3] }}</td>
+                                    <td>{{ row[4] }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5">Click "Refresh Data" to display the latest sensor record.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <form method="POST" style="display: flex; align-items: center; justify-content: center;">
+                        <button type="submit">Refresh Data</button>
+                    </form>
+                </div>
+             </div>
+            
+             <div id="tabOpen6" class="acttab active">
+                <header>
+                    <h1>Activity 6: GPS Module with website</h1>
+                </header>
+                <div class="act6">
+                    <div id="map"></div>
+                    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+                    <div id="info">
+                        <div class="gpsdistance">
+                            <h2>Distance Tracker</h2>
+                            <p>Distance value: <span id="displaydistanceact6">0 dB</span></p>
+                            <canvas id="distancegpsChart"></canvas>
+                        </div>
+                        <div class="cardgps">
+                            <h2>Track Data</h2>
+                            <p>Latitude: <span id="displaylatitude"></span></p>
+                            <p>Longitude: <span id="displaylongitude"></span></p>
+                            <p>Altitude: <span id="displayaltitude"></span></p>
+                            <p>Timestamp: <span id="displaytime"></span></p>
+                            <button type="submit">Button Tracking</button>
+                            <button onclick="viewHistory()">View History</button>
+                        </div>
+                    </div>
+                </div>
+             </div>
+
+        </div>
+        
+    </div> 
+
+<script>
+        document.getElementById("toggleButton").addEventListener("click", function() {
+            const leftDiv = document.getElementById("leftDiv");
+            const rightDiv = document.getElementById("rightDiv");
+            leftDiv.classList.toggle("visible");
+            rightDiv.classList.toggle("expanded");
+        });
+    
+        function tabControl(chooseDiv) {
+            console.log("Tab control called with:", chooseDiv);
+            for (let i = 1; i <= 14; i++) {
+                const tab = document.getElementById('tabOpen' + i);
+                if (tab) {
+                    tab.classList.remove('active');
+                }
+            }
+            const selectedTab = document.getElementById('tabOpen' + chooseDiv);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            } else {
+                console.error("Tab not found:", 'tabOpen' + chooseDiv);
+            }
+        }
+
+        async function toggleStatus() {
+            const response = await fetch('/toggle_status', {
+                method: 'POST',
+            });
+            const data = await response.json();
+            alert(`Status changed to: ${data.status}`);
+        }
+
+        let distancegpsChart;
+        const buzzerstat = document.getElementById('colorbuzzer1');
+
+        async function txtfetching() {
+            try {
+                const response = await fetch('/Gps_data');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        async function textdisplay() {
+            const data = await txtfetching();
+            if (!data) return;
+
+            let latestdist = data.distanceact6;
+            let latestlat = data.latitude;
+            let latestlong = data.longitude;
+            let latestalt = data.altitude;
+            let latesttime = data.current_time;
+
+            const distancevalue = data.distanceact6;
+
+            document.getElementById('displaydistanceact6').textContent = `${latestdist.toFixed(3)}`;
+            document.getElementById('displaylatitude').textContent = `${latestlat.toFixed(3)}`;
+            document.getElementById('displaylongitude').textContent = `${latestlong.toFixed(3)}`;
+            document.getElementById('displayaltitude').textContent = `${latestalt.toFixed(3)}`;
+            document.getElementById('displaytime').textContent = data.current_time;
+
+        }
+
+        async function renderCharts() {
+            const data = await txtfetching();
+            if (!data || data.distanceact6 === null) {
+                console.error('No data available to display');
+                return;
+            }
+
+        const distanceCtx = document.getElementById('distancegpsChart').getContext('2d');
+        if (!distancegpsChart) {
+            console.log('Creating distance chart');
+            distancegpsChart = new Chart(distanceCtx, {
+                type: 'line',
+                data: {
+                    labels: [''],
+                    datasets: [{
+                        label: 'Distance (cm)',
+                        data: [Number(data.distanceact6)],
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                        fill: false,
+                        tension: 0.1,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Times'
+                            },
+                            ticks: {
+                                stepSize: 1
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Value'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        } else {
+            console.log('Updating distance chart');
+            distancegpsChart.data.labels.push(data.distanceact6);
+            distancegpsChart.data.datasets[0].data.push(Number(data.distanceact6));
+            distancegpsChart.update();
+        }
+    }
+
+    let map;
+    let marker;
+
+    async function initMap() {
+        const data = await txtfetching();
+        if (!data) return;
+
+        let gpslat = data.latitude;
+        let gpslong = data.longitude;
+        let gpsalt = data.altitude;
+        let gpsdistance = data.distanceact6;
+
+       
+        if (!map) {
+            
+            map = L.map('map').setView([gpslat, gpslong], 19); 
+
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        }
+
+        
+        if (!marker) {
+            marker = L.marker([gpslat, gpslong]).addTo(map);
+        } else {
+            marker.setLatLng([gpslat, gpslong]);
+        }
+
+        map.setView([gpslat, gpslong], 13);
+        
+        marker.bindPopup(`<b>GPS Location</b><br>Latitude: ${gpslat}<br>Longitude: ${gpslong}`).openPopup();
+    }
+
+    window.onload = () => {
+        renderCharts();
+        textdisplay();
+        initMap();
+        setInterval(renderCharts, 1500);
+        setInterval(textdisplay, 900); 
+        setInterval(initMap, 900);
+    };
+</script>
+    
+</body>
+</html>
